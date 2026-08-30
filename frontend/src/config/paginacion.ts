@@ -1,0 +1,5 @@
+export const PAGINACION = {
+  TAKE_DEFAULT: 10,
+  TAKE_SMALL: 5,
+  TAKE_LARGE: 25,
+};

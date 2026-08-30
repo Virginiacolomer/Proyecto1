@@ -1,0 +1,10 @@
+/* Aplica el filtro solo al icono del calendario */
+/* input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+  } */
+
+input[type='date']::-webkit-calendar-picker-indicator {
+  opacity: 1;
+  cursor: pointer;
+  filter: brightness(0.3);
+}
