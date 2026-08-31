@@ -1,4 +1,4 @@
-# Proyecto Distribuidora (NestJS + React/Vite)
+# Pasos para ejecución local de Proyecto Distribuidora
 Sistema de gestión para distribuidora con arquitectura **NestJS** en el backend y **React (Vite + TypeScript)** en el frontend.
 ---
 ##  Requisitos Previos
@@ -68,6 +68,7 @@ docker-compose up -d mysql
    yarn dev
    ```
    El frontend estará disponible en **`http://localhost:5173`**.
+   Verificar el acceso al panel del admin con las credenciales de abajo
 ---
 ##  Credenciales de Acceso por Defecto
 Una vez ejecutado el Seed, podés ingresar al sistema desde `http://localhost:5173/login`:
