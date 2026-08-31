@@ -1,13 +1,13 @@
 # Proyecto Distribuidora (NestJS + React/Vite)
 Sistema de gestión para distribuidora con arquitectura **NestJS** en el backend y **React (Vite + TypeScript)** en el frontend.
 ---
-## 📋 Requisitos Previos
+##  Requisitos Previos
 Asegúrate de tener instalado en tu máquina:
 - **Node.js** (v20 o superior)
 - **Yarn** (`npm install -g yarn`)
 - **Docker** y **Docker Compose** (para levantar la base de datos MySQL)
 ---
-## 🚀 Guía Rápida para Levantar en Local
+##  Guía Rápida para Levantar en Local
 ### Paso 1: Base de Datos (MySQL)
 Levantá el contenedor de MySQL utilizando Docker Compose desde la carpeta del backend:
 ```bash
@@ -30,20 +30,24 @@ docker-compose up -d mysql
 3. **Configurá las variables de entorno:**
    Crea o verifica el archivo `.env` en la raíz de `backend/proyecto/`:
    ```env
-   DB_TYPE=mysql
-   DB_HOST=localhost
    DB_PORT=3310
-   DB_USERNAME=admin
-   DB_PASSWORD=admin
-   DB_DATABASE=gestionBaseT
+   DB_HOST="localhost"
+   DB_USERNAME=
+   DB_PASSWORD=
+   DB_DATABASE=
+   
    PORT=3000
-   JWT_SECRET=secreto_super_seguro_desarrollo
-   JWT_EXPIRATION_ACCESS=8h
-   JWT_EXPIRATION_REFRESH=7d
-   PUNTO_VENTA_ACTIVO_ID=1
+   DB_TYPE="mysql"
+   DB_SSL=
+   JWT_SECRET=
+   JWT_EXPIRATION_ACCESS=
+   JWT_EXPIRATION_REFRESH=
+   PUNTO_VENTA_ACTIVO_ID=
    ```
 4. **Ejecutá las migraciones de la Base de Datos:**
-
+```bash
+   yarn migration:run
+   ```
 ---
 ### Paso 3: Frontend (React + Vite)
 1. **En una nueva terminal, ingresá a la carpeta del frontend:**
@@ -65,13 +69,13 @@ docker-compose up -d mysql
    ```
    El frontend estará disponible en **`http://localhost:5173`**.
 ---
-## 🔑 Credenciales de Acceso por Defecto
+##  Credenciales de Acceso por Defecto
 Una vez ejecutado el Seed, podés ingresar al sistema desde `http://localhost:5173/login`:
-* **Correo:** `admin@gmail.com`
-* **Contraseña:** `admin`
+* **Correo:** `administrador@gmail.com`
+* **Contraseña:** `12345678`
 * **Empresa:** Seleccionar la empresa generada en el menú desplegable.
 ---
-## 🧪 Pruebas y Testing
+##  Pruebas y Testing
 ### Backend
 * **Ejecutar tests unitarios:** `cd backend/proyecto && yarn test`
 * **Ver cobertura de código:** `cd backend/proyecto && yarn test:cov`
@@ -80,7 +84,7 @@ Una vez ejecutado el Seed, podés ingresar al sistema desde `http://localhost:51
 * **Verificar linter de sintaxis:** `cd frontend && yarn lint`
 * **Checklist de pruebas manuales:** Ver guía completa en [`frontend/TESTING_CHECKLIST.md`](./frontend/TESTING_CHECKLIST.md).
 ---
-## 📁 Estructura del Repositorio
+##  Estructura del Repositorio
 ```text
 .
 ├── backend/
