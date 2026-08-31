@@ -53,6 +53,10 @@ docker-compose up -d mysql
    ```bash
    curl http://localhost:3000/api/seed-all/execute
    ```
+6. **Levantar el Backend:**
+     ```bash
+     yarn start:dev
+   ```
 ---
 ### Paso 3: Frontend (React + Vite)
 1. **En una nueva terminal, ingresá a la carpeta del frontend:**
