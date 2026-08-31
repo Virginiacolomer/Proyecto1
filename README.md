@@ -48,6 +48,11 @@ docker-compose up -d mysql
 ```bash
    yarn migration:run
    ```
+5. **Ejecutá el Seed para poblar la Base de Datos:**
+   Esta función se ejecuta a partir de un endpoint usando curl
+   ```bash
+   curl http://localhost:3000/api/seed-all/execute
+   ```
 ---
 ### Paso 3: Frontend (React + Vite)
 1. **En una nueva terminal, ingresá a la carpeta del frontend:**
