@@ -18,7 +18,6 @@ import { Rol } from "./interfaces/generales/interfaces-generales";
 import CambioPreciosMasivo from "./componentes/gestion-producto/precios/cambio-precios-masivo/util/cambio-precios-masivo";
 import DashboardHome from "./pages/dashboard-home";
 
-import ListaPrecios from "./componentes/gestion-producto/precios/lista_precios/util/lista-precios";
 import ConsultarPersonal from "./componentes/gestion-organizacion/personal/utils/consultar-personal";
 
 function App() {
@@ -47,8 +46,9 @@ function App() {
               <Route path="cliente" element={<ConsultarCliente />} />
               <Route path="proveedor" element={<ConsultarProveedores />} />
               <Route path="personal" element={<ConsultarPersonal />} />
-              <Route path="cambio-precios-masivo" element={<CambioPreciosMasivo />} />
-              <Route path="lista-precios" element={<ListaPrecios />} />
+              <Route element={<PrivateRoute allowedRoles={[Rol.ADMINISTRADOR]} />}>
+                <Route path="cambio-precios-masivo" element={<CambioPreciosMasivo />} />
+              </Route>
               <Route path="localidad" element={<ConsultarLocalidad />} />
               <Route path="condicion-iva" element={<CondicionIva />} />     
 
