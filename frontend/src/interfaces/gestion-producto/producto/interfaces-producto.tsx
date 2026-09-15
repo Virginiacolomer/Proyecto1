@@ -87,38 +87,35 @@ export interface ConsultarProducto {
 }
 
 
-export interface ConsultarProductosCambioPreciosMasivo {
-  id: number;
-  denominacion: string;
-  codigoProveedor: string;
-  observacion: string;
+// CR-006 — Actualización masiva de precios.
+// Un solo precio por producto (según lo indicado por el profesor); los
+// campos de tarifas (Ocasional/Mayorista/Cliente/Oferta) que existían acá
+// pertenecen a otra funcionalidad y quedan fuera de esta historia.
+export type TipoAjustePrecio = "PORCENTAJE" | "MONTO_FIJO";
 
-  precioOcasionalConIva: number;
-  precioOcasionalConIvaNuevo: number;
-  precioMayoristaConIva: number;
-  precioMayoristaConIvaNuevo: number;
-  precioClienteConIva: number;
-  precioClienteConIvaNuevo: number;
-  precioOfertaConIva: number;
-  precioOfertaConIvaNuevo: number;
-
-  dirty: boolean;
-
+export interface FiltroAlcanceCambioPrecios {
+  lineaId?: number;
+  marcaId?: number;
 }
 
-export interface ConsultarProductosListaPrecios {
-  id: number;
+export interface ConsultarProductosCambioPreciosMasivo {
+  productoId: number;
   denominacion: string;
   codigoProveedor: string;
-  observacion: string;
-  stock: number;
-  precioOcasionalConIva: number;
-  precioMayoristaConIva: number;
-  precioClienteConIva: number;
-  precioOfertaConIva: number;
+  precioActual: number;
+  precioNuevo: number;
+}
 
-  dirty: boolean;
+export interface ProductoAumentoFallido {
+  productoId: number;
+  denominacion: string;
+  motivo: string;
+}
 
+export interface ResultadoAumentoMasivo {
+  loteId: string;
+  actualizados: ConsultarProductosCambioPreciosMasivo[];
+  fallidos: ProductoAumentoFallido[];
 }
 
 
