@@ -7,7 +7,6 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { SuperLineaDto } from '../../superlinea/dto/super-linea.dto';
 
 export class LineaDto {
   @ApiProperty({ example: 123, description: 'ID del la linea' })
@@ -21,15 +20,6 @@ export class LineaDto {
   })
   @IsString()
   denominacion: string;
-
-  @ApiProperty()
-  @IsOptional()
-  superlinea?: SuperLineaDto;
-
-  @ApiProperty({ example: 1, description: 'ID de la superlinea' })
-  @Type(() => Number)
-  @IsInt()
-  superLineaId: number;
 
   @IsOptional()
   @IsInt()
