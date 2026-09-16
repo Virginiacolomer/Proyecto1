@@ -70,7 +70,7 @@ export function Alert({
   const [isVisible, setIsVisible] = useState(true);
   const [isExiting, setIsExiting] = useState(false);
 
-  const style = alertStyles[type] || alertStyles.error;
+  const style = alertStyles[type];
   const Icon = style.icon;
 
   useEffect(() => {

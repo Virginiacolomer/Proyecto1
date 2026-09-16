@@ -223,7 +223,6 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
     codigoReferencia: string,
     marca_id: number,
     linea_id: number,
-    superLineaId: number,
     proveedor_id: number,
     conStock: boolean,
     skip: number,
@@ -275,9 +274,6 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
     }
     if (linea_id) {
       query.andWhere('linea.id = :linea_id', { linea_id });
-    }
-    if (superLineaId) {
-      query.andWhere('linea.super_linea_id = :superLineaId', { superLineaId });
     }
 
     this.logger.warn(`conStock llega como: ${conStock} (${typeof conStock})`);

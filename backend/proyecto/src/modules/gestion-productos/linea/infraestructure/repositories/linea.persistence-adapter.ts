@@ -40,9 +40,9 @@ export class LineaPersistenceAdapter
     const repo = this.uow.getRepository(Linea);
 
     try {
+      // Creamos la entidad sin sublíneas
       const nuevaEntity = repo.create({
         denominacion: data.denominacion,
-        superLineaId: data.superLineaId,
         utilizaStockMinimo: data.utilizaStockMinimo,
         stockMinimo: data.stockMinimo,
         usuarioCreatedId: data.usuarioCreatedId,
@@ -50,6 +50,8 @@ export class LineaPersistenceAdapter
       });
 
       const entityGuardada = await repo.save(nuevaEntity);
+
+
       return entityGuardada;
     } catch (error) {
       this.logger.error(`Error al conectar con la base de datos: ${error}`);
@@ -74,14 +76,13 @@ export class LineaPersistenceAdapter
       throw new NotFoundException(`Línea con ID ${id} no encontrada`);
     }
 
+    // Actualizar datos simples
     entity.denominacion = data.denominacion ?? entity.denominacion;
-    if (data.superLineaId !== undefined) {
-      entity.superLineaId = data.superLineaId;
-    }
     entity.utilizaStockMinimo = data.utilizaStockMinimo;
     entity.stockMinimo = data.stockMinimo ?? 0;
-    entity.usuarioUpdatedId = data.usuarioUpdatedId;
+    entity.usuarioCreatedId = data.usuarioCreatedId;
 
+    // Guardar entidad antes de procesar sublíneas (opcional según lógica de negocio)
     const entityActualizada = await repo.save(entity);
 
     return entityActualizada;
@@ -91,7 +92,6 @@ export class LineaPersistenceAdapter
     try {
       const entity = await this.repository
         .createQueryBuilder('linea')
-        .leftJoinAndSelect('linea.superlinea', 'superlinea')
         .where('linea.id = :id', { id })
         .andWhere('linea.deletedAt IS NULL')
         .getOne();
@@ -179,7 +179,6 @@ export class LineaPersistenceAdapter
   ): Promise<{ data: Linea[]; total: number }> {
     try {
       const query = this.baseQuery(incluirEliminados)
-        .leftJoinAndSelect(`${this.ALIAS}.superlinea`, 'superlinea');
 
       if (denominacion) {
         query.andWhere(`UPPER(${this.ALIAS}.denominacion) LIKE :denominacion`, {
