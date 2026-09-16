@@ -25,7 +25,7 @@ import { FiltrosLinea, FiltrosLineaValues } from "./componentes/filtros-linea";
 import LineaService from "./services/linea-service";
 import RegistrarActualizarLineaForm from "./utils/registrar-actualizar-linea";
 
-export default function ConsultarSuperlinea() {
+export default function ConsultarLinea() {
   const [lineas, setLineas] = useState<Linea[]>([]);
   const [loading, setLoading] = useState(false);
   const [error] = useState<string | null>(null);
