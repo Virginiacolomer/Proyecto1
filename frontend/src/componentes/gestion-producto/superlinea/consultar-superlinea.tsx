@@ -33,7 +33,7 @@ export default function ConsultarSuperlinea() {
       const data = await SuperLineaService.obtenerListado();
       setSuperlineas(data || []);
     } catch (err) {
-      addAlert(parseApiError(err), "danger");
+      addAlert(parseApiError(err), "error");
     } finally {
       setLoading(false);
     }
@@ -59,7 +59,7 @@ export default function ConsultarSuperlinea() {
         addAlert(res.mensaje || "SuperLínea eliminada correctamente", "success");
         cargarSuperlineas();
       } catch (err) {
-        addAlert(parseApiError(err), "danger");
+        addAlert(parseApiError(err), "error");
       }
     }
   };
@@ -70,7 +70,7 @@ export default function ConsultarSuperlinea() {
       setAuditoria(data);
       setModalTipo("auditoria");
     } catch (err) {
-      addAlert(parseApiError(err), "danger");
+      addAlert(parseApiError(err), "error");
     }
   };
 
