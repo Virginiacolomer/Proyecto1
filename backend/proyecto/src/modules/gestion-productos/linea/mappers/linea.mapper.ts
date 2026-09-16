@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { Linea } from '../domain/entities/linea.entity';
 import { LineaDto } from '../dto/linea.dto';
-import { toReferenciaDto } from 'src/modules/common/utils/mappers/referencia.mapper';
+import { SuperLineaMapper } from '../../superlinea/mappers/super-linea.mapper';
 
 export class LineaMapper {
   private static readonly logger = new Logger(LineaMapper.name);
@@ -10,12 +10,13 @@ export class LineaMapper {
     return {
       id: entity.id,
       denominacion: entity.denominacion,
+      superLineaId: entity.superLineaId,
+      superlinea: entity.superlinea ? SuperLineaMapper.toDto(entity.superlinea) : undefined,
       stockMinimo: entity.stockMinimo,
       utilizaStockMinimo: entity.utilizaStockMinimo,
       observacion: entity.observacion ?? '',
       sistema: entity.sistema,
       deletedAt: entity.deletedAt ? entity.deletedAt.toISOString() : null,
-
     };
   }
 }
