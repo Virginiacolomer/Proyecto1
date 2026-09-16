@@ -240,7 +240,7 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
 
       if (denominacion) {
         condiciones.push(
-          `UPPER(producto.denominacion) LIKE UPPER(:denominacion)`,
+          `(UPPER(producto.denominacion) LIKE UPPER(:denominacion) OR UPPER(linea.denominacion) LIKE UPPER(:denominacion))`
         );
         parametros.denominacion = `%${denominacion}%`;
       }
