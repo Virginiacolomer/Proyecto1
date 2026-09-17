@@ -27,7 +27,6 @@ export interface IProductoRepository {
     codigoReferencia: string,
     marca_id: number,
     linea_id: number,
-    superLineaId: number,
     proveedor_id: number,
     conStock: boolean,
     skip: number,

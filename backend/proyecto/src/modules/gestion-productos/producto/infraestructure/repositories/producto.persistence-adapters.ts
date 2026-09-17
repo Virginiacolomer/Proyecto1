@@ -30,50 +30,49 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
   ) { }
 
 
-  @Transactional()
-  async create(
-    data: CreateProductoDto,
-    linea: Linea,
-    marca: Marca,
-    usuario: Usuario,
-  ): Promise<Producto> {
-    const repo = this.uow.getRepository(Producto);
-    this.logger.log(`Creando un nuevo p ${this.ENTITY_NAME}`);
+    @Transactional()
+    async create(
+      data: CreateProductoDto,
+      linea: Linea,
+      marca: Marca,
+      usuario: Usuario,
+    ): Promise<Producto> {
+      const repo = this.uow.getRepository(Producto);
+      this.logger.log(`Creando un nuevo p ${this.ENTITY_NAME}`);
 
-    try {
-      // DEBUG: Loggear todos los datos que llegan
-      this.logger.debug('Data recibida:', JSON.stringify(data, null, 2));
-      // Verificar que todos los objetos relacionados existan
-      this.logger.debug('Linea:', linea);
-      this.logger.debug('Marca:', marca);
-      this.logger.debug('Usuario:', usuario);
+      const { costo, porcentaje, stock, stockMinimo, ...datosBase } =
+        data as CreateProductoDto & Record<string, any>;
 
       const nuevaEntity = repo.create({
-        ...data,
+        ...datosBase,
         linea,
         marca,
         usuarioCreated: usuario,
       });
 
-      this.logger.debug('Entity creada:', nuevaEntity);
+      // Reglas de negocio del dominio: se ejecuta ANTES de intentar persistir,
+      // así ante un dato inválido no se guarda nada (todo o nada).
+      nuevaEntity.establecerCostoMargenYStock({
+        costo,
+        margen: porcentaje,
+        stock,
+        stockMinimo,
+      });
 
-      const entityGuardada = await repo.save(nuevaEntity);
-      this.logger.log(`Entity guardada con ID: ${entityGuardada.id}`);
-
-      this.logger.log(
-        `${this.ENTITY_NAME} creado exitosamente con ID: ${entityGuardada.id}`,
-      );
-
-
-      return entityGuardada;
-    } catch (error) {
-      this.logger.error(`Error al crear ${this.ENTITY_NAME}:`, error);
-      this.logger.error('Stack trace:', error);
-      throw new DatabaseConnectionException(
-        'Error al guardar en la base de datos.',
-      );
+      try {
+        const entityGuardada = await repo.save(nuevaEntity);
+        this.logger.log(
+          `${this.ENTITY_NAME} creado exitosamente con ID: ${entityGuardada.id}`,
+        );
+        return entityGuardada;
+      } catch (error) {
+        this.logger.error(`Error al crear ${this.ENTITY_NAME}:`, error);
+        throw new DatabaseConnectionException(
+          'Error al guardar en la base de datos.',
+        );
+      }
     }
-  }
+
   async findOne(id: number): Promise<Producto | null> {
     try {
       const entity = await this.repository
@@ -154,43 +153,49 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
     }
   }
 
-  @Transactional()
-  async update(
-    id: number,
-    data: UpdateProductoDto,
-    linea: Linea,
-    marca: Marca,
+    @Transactional()
+    async update(
+      id: number,
+      data: UpdateProductoDto,
+      linea: Linea,
+      marca: Marca,
 
-    usuario: Usuario,
-  ): Promise<Producto> {
-    const repo = this.uow.getRepository(Producto);
-    try {
+      usuario: Usuario,
+    ): Promise<Producto> {
+      const repo = this.uow.getRepository(Producto);
+
       const entity = await this.findOne(id);
-
       if (!entity) {
         throw new NotFoundException(`EL prodcuto con ID ${id} no encontrada`);
       }
-      const {
 
-        ...dataSinItems
-      } = data;
+      const { costo, porcentaje, stock, stockMinimo, ...dataSinItems } = data;
+
+      // Reglas de negocio del dominio: valida y recalcula el precio ANTES de
+      // tocar el resto de la entidad. Si falla, el producto conserva sus
+      // valores anteriores y no se llega a guardar nada.
+      entity.establecerCostoMargenYStock({
+        costo,
+        margen: porcentaje,
+        stock,
+        stockMinimo,
+      });
 
       Object.assign(entity, dataSinItems, {
         linea,
         marca,
       });
 
-      entity.usuarioUpdated = usuario; 
-      const entityActualizada = await repo.save(entity);
+      entity.usuarioUpdated = usuario;
 
-
-      return entityActualizada;
-    } catch (error) {
-      this.logger.warn(`Items para eliminar: )}`);
-
-      throw new DatabaseConnectionException(error);
+      try {
+        const entityActualizada = await repo.save(entity);
+        return entityActualizada;
+      } catch (error) {
+        throw new DatabaseConnectionException(error);
+      }
     }
-  }
+
 
 
   async updateEntity(uow: IUnitOfWork, producto: Producto): Promise<Producto> {
@@ -223,7 +228,6 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
     codigoReferencia: string,
     marca_id: number,
     linea_id: number,
-    superLineaId: number,
     proveedor_id: number,
     conStock: boolean,
     skip: number,
@@ -275,9 +279,6 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
     }
     if (linea_id) {
       query.andWhere('linea.id = :linea_id', { linea_id });
-    }
-    if (superLineaId) {
-      query.andWhere('linea.super_linea_id = :superLineaId', { superLineaId });
     }
 
     this.logger.warn(`conStock llega como: ${conStock} (${typeof conStock})`);
