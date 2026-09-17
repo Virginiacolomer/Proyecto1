@@ -20,6 +20,7 @@ export class ProductoMapper {
     return {
       id: entity.id,
       denominacion: entity.denominacion,
+      presentacion: entity.presentacion ?? '',
       observacion: entity.observacion ?? '',
       codigoProveedorDenominacion:
         entity.codigoProveedor + ' - ' + entity.denominacion,
@@ -72,6 +73,7 @@ export class ProductoMapper {
     return {
       id: entity.id,
       denominacion: entity.denominacion,
+      presentacion: entity.presentacion ?? '',
       observacion: entity.observacion ?? '',
       codigoProveedor: entity.codigoProveedor ?? '',
       codigoBarra: entity.codigoBarra ?? '',

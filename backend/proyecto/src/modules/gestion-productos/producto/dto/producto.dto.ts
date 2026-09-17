@@ -28,6 +28,10 @@ export class ProductoDto {
   @IsString()
   denominacion: string;
 
+  @ApiPropertyOptional()
+  @IsString()
+  presentacion?: string;
+
   @ApiProperty()
   @IsString()
   observacion?: string;

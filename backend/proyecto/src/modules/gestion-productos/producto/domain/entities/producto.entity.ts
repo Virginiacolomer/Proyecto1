@@ -29,6 +29,10 @@ export class Producto {
   @Column({ type: 'text' })
   denominacion: string;
 
+  @ApiProperty({ description: 'Presentación del producto (ej: 1L, Pack x6)' })
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  presentacion?: string;
+
   @Index()
   @Column({ type: 'varchar', length: 255, nullable: true })
   codigoProveedor?: string | null;
