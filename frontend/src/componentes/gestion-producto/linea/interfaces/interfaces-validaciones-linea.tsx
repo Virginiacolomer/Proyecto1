@@ -5,7 +5,6 @@ import { Linea } from "../../../../interfaces/gestion-producto/linea/interfaces-
 
 export interface FormValues {
   denominacion: string;
-  superLineaId: number;
   observacion?: string | null;
   stockMinimo?: number;
   utilizaStockMinimo?: boolean;
@@ -28,11 +27,6 @@ export const schema = (utilizaStockMinimo: boolean) =>
       .required("La denominación es obligatoria.")
       .max(255, "Máximo 255 caracteres.")
       .matches(/^[A-Za-z0-9 áéíóúÁÉÍÓÚñÑ]+$/, "Solo se permiten letras, números y espacios."),
-    superLineaId: yup
-      .number()
-      .typeError("La SuperLínea es obligatoria.")
-      .required("La SuperLínea es obligatoria.")
-      .positive("Debe seleccionar una SuperLínea válida."),
     observacion: yup.string().optional().nullable(),
     stockMinimo: yup.number().when([], {
       is: () => utilizaStockMinimo,
@@ -40,6 +34,7 @@ export const schema = (utilizaStockMinimo: boolean) =>
       otherwise: (schema) => schema.optional(),
     }),
     utilizaStockMinimo: yup.boolean().optional(),
+   
   });
 
 //===================== transform data ============================================//
@@ -47,9 +42,9 @@ export const schema = (utilizaStockMinimo: boolean) =>
 export const transformData = (linea: Linea): FormValues => {
   return {
     denominacion: linea.denominacion,
-    superLineaId: linea.superLineaId || (linea.superlinea?.id ?? 0),
     observacion: linea.observacion ?? null,
     stockMinimo: linea.stockMinimo ?? 0,
     utilizaStockMinimo: linea.utilizaStockMinimo ?? false,
   };
 };
+
