@@ -54,10 +54,11 @@ describe('ProductoService - Búsqueda Rápida', () => {
       '',
       0, // marca_id
       0, // linea_id
+      0, // superLineaId
       0, // proveedor_id
-      false,
-      skip,
-      take,
+      false, // conStock default
+      0, // skip default
+      10, // take default
     );
 
     // Verificamos que el servicio delega correctamente al repositorio sin mutar el estado
@@ -68,6 +69,7 @@ describe('ProductoService - Búsqueda Rápida', () => {
       '',
       0,
       0,
+      0, // superLineaId
       0,
       false,
       skip,
@@ -86,6 +88,7 @@ describe('ProductoService - Búsqueda Rápida', () => {
       '',
       0,
       0,
+      0, // superLineaId
       0,
       false,
       0,
