@@ -1,17 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SuperLineaController } from '../../src/modules/gestion-productos/superlinea/application/controllers/super-linea.controller';
-import { SuperLineaService } from '../../src/modules/gestion-productos/superlinea/application/services/super-linea.service';
-import { AuthGuard } from '../../src/modules/gestion-usuario/auth/auth.guard';
-import { CreateSuperLineaDto } from '../../src/modules/gestion-productos/superlinea/dto/create-super-linea.dto';
-import { UpdateSuperLineaDto } from '../../src/modules/gestion-productos/superlinea/dto/update-super-linea.dto';
-import { PaginationWithDenominacionDto } from '../../src/modules/common/dto/busquedas/pagination-with-denominacion.dto';
+import { SuperLineaController } from 'src/modules/gestion-productos/superlinea/application/controllers/super-linea.controller';
+import { SuperLineaService } from 'src/modules/gestion-productos/superlinea/application/services/super-linea.service';
+import { AuthGuard } from 'src/modules/gestion-usuario/auth/auth.guard';
+import { CreateSuperLineaDto } from 'src/modules/gestion-productos/superlinea/dto/create-super-linea.dto';
+import { UpdateSuperLineaDto } from 'src/modules/gestion-productos/superlinea/dto/update-super-linea.dto';
+import { PaginationWithDenominacionDto } from 'src/modules/common/dto/busquedas/pagination-with-denominacion.dto';
 
 describe('SuperLineaController (Unit Tests)', () => {
   let controller: SuperLineaController;
-  let service: jest.Mocked<SuperLineaService>;
+  let service: any;
 
   const mockResponsePost = { mensaje: 'SuperLínea creada correctamente' };
-  const mockSuperLineaDto = {
+  const mockSuperLineaDto: any = {
     id: 1,
     denominacion: 'BEBIDAS',
     observacion: 'Refrescos',
@@ -20,7 +20,7 @@ describe('SuperLineaController (Unit Tests)', () => {
   };
 
   beforeEach(async () => {
-    const mockService: Partial<SuperLineaService> = {
+    const mockService = {
       create: jest.fn(),
       update: jest.fn(),
       findByDenominacionFiltered: jest.fn(),

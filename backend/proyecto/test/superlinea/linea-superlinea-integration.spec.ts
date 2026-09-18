@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, NotFoundException } from '@nestjs/common';
-import { LineaService } from '../../src/modules/gestion-productos/linea/application/services/linea.service';
-import { ILineaRepository } from '../../src/modules/gestion-productos/linea/domain/interfaces/linea.repository.interface';
-import { PoliticaEliminacionLinea } from '../../src/modules/gestion-productos/linea/domain/services/politica-eliminacion-linea.service';
-import { UsuarioService } from '../../src/modules/gestion-usuario/usuario/application/services/usuario.service';
-import { CreateLineaDto } from '../../src/modules/gestion-productos/linea/dto/create-linea.dto';
+import { LineaService } from 'src/modules/gestion-productos/linea/application/services/linea.service';
+import { ILineaRepository } from 'src/modules/gestion-productos/linea/domain/interfaces/linea.repository.interface';
+import { PoliticaEliminacionLinea } from 'src/modules/gestion-productos/linea/domain/services/politica-eliminacion-linea.service';
+import { UsuarioService } from 'src/modules/gestion-usuario/usuario/application/services/usuario.service';
+import { CreateLineaDto } from 'src/modules/gestion-productos/linea/dto/create-linea.dto';
 
 describe('Linea & SuperLinea Integration / Business Rules', () => {
   let lineaService: LineaService;

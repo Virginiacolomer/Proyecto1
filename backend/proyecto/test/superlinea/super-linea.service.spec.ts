@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, NotFoundException } from '@nestjs/common';
-import { SuperLineaService } from '../../src/modules/gestion-productos/superlinea/application/services/super-linea.service';
-import { ISuperLineaRepository } from '../../src/modules/gestion-productos/superlinea/domain/interfaces/super-linea.repository.interface';
-import { PoliticaEliminacionSuperLinea } from '../../src/modules/gestion-productos/superlinea/domain/services/politica-eliminacion-super-linea.service';
-import { UsuarioService } from '../../src/modules/gestion-usuario/usuario/application/services/usuario.service';
-import { CreateSuperLineaDto } from '../../src/modules/gestion-productos/superlinea/dto/create-super-linea.dto';
-import { UpdateSuperLineaDto } from '../../src/modules/gestion-productos/superlinea/dto/update-super-linea.dto';
-import { SuperLinea } from '../../src/modules/gestion-productos/superlinea/domain/entities/super-linea.entity';
+import { SuperLineaService } from 'src/modules/gestion-productos/superlinea/application/services/super-linea.service';
+import { ISuperLineaRepository } from 'src/modules/gestion-productos/superlinea/domain/interfaces/super-linea.repository.interface';
+import { PoliticaEliminacionSuperLinea } from 'src/modules/gestion-productos/superlinea/domain/services/politica-eliminacion-super-linea.service';
+import { UsuarioService } from 'src/modules/gestion-usuario/usuario/application/services/usuario.service';
+import { CreateSuperLineaDto } from 'src/modules/gestion-productos/superlinea/dto/create-super-linea.dto';
+import { UpdateSuperLineaDto } from 'src/modules/gestion-productos/superlinea/dto/update-super-linea.dto';
+import { SuperLinea } from 'src/modules/gestion-productos/superlinea/domain/entities/super-linea.entity';
 
 describe('SuperLineaService (Unit Tests)', () => {
   let service: SuperLineaService;

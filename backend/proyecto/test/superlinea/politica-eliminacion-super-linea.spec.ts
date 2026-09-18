@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PoliticaEliminacionSuperLinea } from '../../src/modules/gestion-productos/superlinea/domain/services/politica-eliminacion-super-linea.service';
-import { ISuperLineaRepository } from '../../src/modules/gestion-productos/superlinea/domain/interfaces/super-linea.repository.interface';
+import { PoliticaEliminacionSuperLinea } from 'src/modules/gestion-productos/superlinea/domain/services/politica-eliminacion-super-linea.service';
+import { ISuperLineaRepository } from 'src/modules/gestion-productos/superlinea/domain/interfaces/super-linea.repository.interface';
 
 describe('PoliticaEliminacionSuperLinea (Domain Service Tests)', () => {
   let politica: PoliticaEliminacionSuperLinea;
