@@ -8,6 +8,8 @@ import {
   Index,
   JoinColumn,
 } from 'typeorm';
+import { ProductoInvalidoException } from '../exceptions/producto-invalido.exception';
+import { redondear5 } from 'src/modules/common/utils/number/redondeo';
 import { Linea } from '../../../linea/domain/entities/linea.entity';
 import { Marca } from '../../../marca/domain/entities/marca.entity';
 import { AlicuotaIva } from 'src/modules/organizacion/enums/alicuota-iva.enum';
@@ -176,4 +178,52 @@ export class Producto {
 
   @Column({ type: 'text', nullable: true })
   codigoReferencia?: string | null;
+
+  /**
+   * Valida y aplica costo, margen y stock según las reglas de negocio.
+   * Se ejecuta en el dominio (no en el DTO ni en el controller) para que
+   * ninguna vía de acceso (formulario, importación, otro servicio interno)
+   * pueda persistir un producto inconsistente.
+   *
+   * Si algún dato es inválido, no modifica el estado del producto y lanza
+   * ProductoInvalidoException con TODOS los errores encontrados.
+   */
+  establecerCostoMargenYStock(datos: {
+    costo?: number;
+    margen?: number;
+    stock?: number;
+    stockMinimo?: number;
+  }): void {
+    const costo = datos.costo ?? this.costo ?? 0;
+    const margen = datos.margen ?? this.porcentaje ?? 0;
+    const stock = datos.stock ?? this.stock ?? 0;
+    const stockMinimo = datos.stockMinimo ?? this.stockMinimo ?? 0;
+
+    const errores: string[] = [];
+
+    if (costo <= 0) {
+      errores.push('El costo debe ser mayor a cero');
+    }
+    if (margen < 0) {
+      errores.push('El margen no puede ser negativo');
+    }
+    if (stock < 0) {
+      errores.push('El stock actual no puede ser negativo');
+    }
+    if (stockMinimo < 0) {
+      errores.push('El stock mínimo no puede ser negativo');
+    }
+
+    if (errores.length > 0) {
+      throw new ProductoInvalidoException(errores);
+    }
+
+    this.costo = costo;
+    this.porcentaje = margen;
+    this.stock = stock;
+    this.stockMinimo = stockMinimo;
+    // El precio de venta siempre se deriva de costo + margen.
+    // Nunca se acepta un valor de precio cargado externamente.
+    this.precio = redondear5(costo + costo * (margen / 100));
+  }
 }

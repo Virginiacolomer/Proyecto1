@@ -13,13 +13,10 @@ import { LineaService } from './application/services/linea.service';
 import { ProductoModule } from '../producto/producto.module';
 import { PoliticaEliminacionLinea } from './domain/services/politica-eliminacion-linea.service';
 
-import { SuperLineaModule } from '../superlinea/super-linea.module';
-
 @Module({
   imports: [
     TypeOrmModule.forFeature([Linea]),
     forwardRef(() => ProductoModule),
-    forwardRef(() => SuperLineaModule),
     UsuarioModule,
   ],
   controllers: [LineaController],
