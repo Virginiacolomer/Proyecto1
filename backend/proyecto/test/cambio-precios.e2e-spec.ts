@@ -161,7 +161,12 @@ describe('CambioPrecios (e2e) - CR-006', () => {
       .set('Authorization', `Bearer ${token}`)
       .query({ codigo: denominacion, exacto: false, skip: 0, take: 5 });
 
-    const id = busqueda.body.data.find((p: any) => p.denominacion === denominacion)?.id;
+    // El backend normaliza la denominación a minúsculas al crear
+    // (NormalizeDenominacionPipe), así que comparamos por el sufijo único
+    // en vez de por igualdad exacta contra el string original.
+    const id = busqueda.body.data.find((p: any) =>
+      p.denominacion?.toLowerCase().includes(`${sufijo}`),
+    )?.id;
     if (!id) throw new Error(`No se pudo obtener el id del producto "${denominacion}".`);
     return id;
   }
