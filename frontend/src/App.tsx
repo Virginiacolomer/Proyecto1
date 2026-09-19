@@ -13,6 +13,7 @@ import ConsultarProveedores from "./componentes/gestion-organizacion/proveedor/u
 import ConsultarLocalidad from "./componentes/gestion-organizacion/localidad/utils/consultar-localidad";
 import ConsultarLinea from "./componentes/gestion-producto/linea/utils/consultar-linea";
 import ConsultarSuperlinea from "./componentes/gestion-producto/superlinea/consultar-superlinea";
+import ConsultarPresentacion from "./componentes/gestion-producto/presentacion/utils/consultar-presentacion";
 
 import PrivateRoute from "./utils/PrivateRoute";
 import { Rol } from "./interfaces/generales/interfaces-generales";
@@ -53,6 +54,7 @@ function App() {
               <Route path="lista-precios" element={<ListaPrecios />} />
               <Route path="localidad" element={<ConsultarLocalidad />} />
               <Route path="condicion-iva" element={<CondicionIva />} />     
+              <Route path="presentacion" element={<ConsultarPresentacion />} />
 
 
             </Route>

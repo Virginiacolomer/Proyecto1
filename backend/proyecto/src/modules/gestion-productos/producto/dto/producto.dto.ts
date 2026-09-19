@@ -28,6 +28,14 @@ export class ProductoDto {
   @IsString()
   denominacion: string;
 
+  @ApiPropertyOptional({
+    type: () => ReferenciaDto,
+    description: 'Presentacion asociada al producto',
+  })
+  @ValidateNested()
+  @Type(() => ReferenciaDto)
+  presentacion?: ReferenciaDto;
+
   @ApiProperty()
   @IsString()
   observacion?: string;
