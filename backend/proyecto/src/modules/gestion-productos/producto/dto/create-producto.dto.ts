@@ -105,11 +105,13 @@ export class CreateProductoDto {
   @IsOptional()
   @IsNumber()
   porcentaje?: number;
-
-  @IsOptional()
-  @IsNumber()
-  precio: number;
-
+  // elimino: 
+  // @IsOptional()
+  //@IsNumber()
+  //precio: number;
+  //Como el ValidationPipe global tiene whitelist: true y forbidNonWhitelisted: true (main.ts), si alguien manda precio en el body igual, 
+  // la request se rechaza directamente por tener una propiedad no permitida. Y como UpdateProductoDto 
+  // extiende PartialType(CreateProductoDto), el campo desaparece también de la edición automáticamente.
   createdAt?: Date;
 
   @IsEnum(AlicuotaIva, {
