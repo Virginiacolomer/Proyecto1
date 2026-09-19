@@ -40,13 +40,14 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
       const repo = this.uow.getRepository(Producto);
       this.logger.log(`Creando un nuevo p ${this.ENTITY_NAME}`);
 
-      const { costo, porcentaje, stock, stockMinimo, ...datosBase } =
+      const { costo, porcentaje, stock, stockMinimo, ...dataSinItems } =
         data as CreateProductoDto & Record<string, any>;
 
       const nuevaEntity = repo.create({
-        ...datosBase,
+        ...dataSinItems,
         linea,
         marca,
+        presentacion: dataSinItems.presentacionId ? ({ id: dataSinItems.presentacionId } as any) : null,
         usuarioCreated: usuario,
       });
 
@@ -79,6 +80,8 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
         .createQueryBuilder('producto')
         .leftJoinAndSelect('producto.linea', 'linea')
         .leftJoinAndSelect('producto.marca', 'marca')
+        .leftJoinAndSelect('producto.presentacion', 'presentacion')
+        .withDeleted()
         .where('producto.id = :id', { id })
         .andWhere('producto.deletedAt IS NULL')
         .getOne();
@@ -108,6 +111,8 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
         .leftJoinAndSelect('producto.usuarioCreated', 'usuarioCreated')
         .leftJoinAndSelect('producto.usuarioUpdated', 'usuarioUpdated')
         .leftJoinAndSelect('producto.usuarioDeleted', 'usuarioDeleted')
+        .leftJoinAndSelect('producto.presentacion', 'presentacion')
+        .withDeleted()
         .where('producto.id = :id', { id })
 
         .getOne();
@@ -184,6 +189,7 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
       Object.assign(entity, dataSinItems, {
         linea,
         marca,
+        presentacion: dataSinItems.presentacionId ? ({ id: dataSinItems.presentacionId } as any) : null,
       });
 
       entity.usuarioUpdated = usuario;
@@ -240,6 +246,8 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
       .leftJoinAndSelect('producto.marca', 'marca')
       .leftJoinAndSelect('producto.linea', 'linea')
       .leftJoinAndSelect('linea.superlinea', 'superlinea')
+      .leftJoinAndSelect('producto.presentacion', 'presentacion')
+      .withDeleted()
 
     if (denominacion || codigoProveedor || codigoReferencia) {
       const condiciones: string[] = [];

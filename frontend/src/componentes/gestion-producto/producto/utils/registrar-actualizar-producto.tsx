@@ -12,6 +12,7 @@ import CantidadesInput from "../../../herramientas/formateo-de-campos/cantidades
 import { Producto, SelectPresentacion } from "../../../../interfaces/gestion-producto/producto/interfaces-producto";
 import { SelectMarca } from "../../../../interfaces/gestion-producto/marca/interfaces-marca";
 import { Linea, SelectLinea } from "../../../../interfaces/gestion-producto/linea/interfaces-linea";
+import PresentacionService from "../../presentacion/services/presentacion-service";
 import { AlicuotaIva, ResponsePost } from "../../../../interfaces/generales/interfaces-generales";
 import Select from "react-select";
 import { useEnterFocus } from "../../../herramientas/formateo-de-campos/movimiento-campos";
@@ -96,7 +97,15 @@ export default function RegistrarActualizarProductoForm({
   const cantidadPorPack = watch("cantidadPorPack");
   const utilizaStockMinimo = watch("utilizaStockMinimo");
   const utilizaPack = watch("utilizaPack");
-  
+  const costo = watch("costo");
+  const porcentaje = watch("porcentaje");
+
+  useEffect(() => {
+    const c = Number(costo) || 0;
+    const p = Number(porcentaje) || 0;
+    const precioCalculado = c + (c * (p / 100));
+    setValue("precio", precioCalculado, { shouldValidate: true });
+  }, [costo, porcentaje, setValue]);
 
   //=============================== CONSTANTES PARA MOVIMIENTO ENTRE CAMPOS ==================================
   const denominacionProductoRef = useRef<HTMLInputElement>(null);
@@ -203,16 +212,19 @@ export default function RegistrarActualizarProductoForm({
         if (!confirmar) return; // el usuario canceló
       }
 
+      // Extraemos precio porque el backend lo rechaza (se calcula solo allá)
+      const { precio, ...datosParaBackend } = formData as any;
+
       if (producto) {
         const payload = {
-          ...formData,
+          ...datosParaBackend,
           usuarioUpdatedId: usuarioId,
         };
 
         response = await ProductoService.actualizar(producto.id, payload);
       } else {
         const payload = {
-          ...formData,
+          ...datosParaBackend,
           usuarioCreatedId: usuarioId,
         };
 
@@ -252,7 +264,7 @@ export default function RegistrarActualizarProductoForm({
         }
       }
       if (select === "PRESENTACION") {
-        const res = await ProductoService.obtenerTotales({ denominacion: denominacionPresentacion }, "presentacion");
+        const res = await PresentacionService.obtener({ denominacion: denominacionPresentacion });
         if (res) {
           console.log("Presentaciones encontradas:", res);
           setPresentaciones(res.data);
@@ -408,7 +420,7 @@ export default function RegistrarActualizarProductoForm({
                     value={watch("precio") || 0}
                     onChange={(value) => setValue("precio", value, { shouldValidate: true })}
                     maxDigits={9}
-                    disabled={producto && producto.sistema > 0 ? true : false}
+                    disabled={true}
                   />
                   <PorcentajeInput
                     name="porcentaje"
@@ -554,10 +566,6 @@ export default function RegistrarActualizarProductoForm({
                 onLineaChange={(linea) => {
                   methods.setValue("lineaId", linea?.id || 0);
                   setLineaSeleccionada(linea as any);
-                  const isManual = !watch("denominacion") || watch("denominacion") === `${selectedLinea?.denominacion || ""} ${selectedMarca?.denominacion || ""} ${selectedPresentacion?.denominacion || ""}`.trim();
-                  if(isManual) {
-                    methods.setValue("denominacion", `${linea?.denominacion || ""} ${selectedMarca?.denominacion || ""} ${selectedPresentacion?.denominacion || ""}`.trim());
-                  }
                   setSelectedLinea(linea as any);
                 }}
                 onAgregarLinea={() => setMostrarFormularioLinea(true)}
@@ -576,10 +584,6 @@ export default function RegistrarActualizarProductoForm({
                 onEnterMarca={(e) => handleEnterEnSelect(e, "MARCA")}
                 onChangeMarca={(marca) => {
                   methods.setValue("marcaId", marca?.id || 0);
-                  const isManual = !watch("denominacion") || watch("denominacion") === `${selectedLinea?.denominacion || ""} ${selectedMarca?.denominacion || ""} ${selectedPresentacion?.denominacion || ""}`.trim();
-                  if(isManual) {
-                    methods.setValue("denominacion", `${selectedLinea?.denominacion || ""} ${marca?.denominacion || ""} ${selectedPresentacion?.denominacion || ""}`.trim());
-                  }
                   setSelectedMarca(marca as any);
                 }}
                 onAgregarMarca={() => setMostrarFormularioMarca(true)}
@@ -598,10 +602,6 @@ export default function RegistrarActualizarProductoForm({
                 onEnterPresentacion={(e) => handleEnterEnSelect(e, "PRESENTACION")}
                 onChangePresentacion={(pres) => {
                   methods.setValue("presentacionId", pres?.id || 0);
-                  const isManual = !watch("denominacion") || watch("denominacion") === `${selectedLinea?.denominacion || ""} ${selectedMarca?.denominacion || ""} ${selectedPresentacion?.denominacion || ""}`.trim();
-                  if(isManual) {
-                    methods.setValue("denominacion", `${selectedLinea?.denominacion || ""} ${selectedMarca?.denominacion || ""} ${pres?.denominacion || ""}`.trim());
-                  }
                   setSelectedPresentacion(pres as any);
                 }}
                 onAgregarPresentacion={() => setMostrarFormularioPresentacion(true)}
