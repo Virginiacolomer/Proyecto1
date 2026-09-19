@@ -475,6 +475,17 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
     return count > 0;
   }
 
+  async existsProductosActivosByPresentacion(presentacionId: number): Promise<boolean> {
+    const count = await this.repository
+      .createQueryBuilder('producto')
+      .where('producto.presentacion_id = :presentacionId', { presentacionId })
+      .andWhere('producto.deletedAt IS NULL')
+      .limit(1)
+      .getCount();
+
+    return count > 0;
+  }
+
   // En ProductoService
   async findByIds(ids: number[]): Promise<Producto[]> {
 
