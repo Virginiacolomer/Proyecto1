@@ -171,6 +171,10 @@ export class ProductoRepository implements IProductoRepository {
     return this.persistenceService.existsProductosActivosByLinea(lineaId);
   }
 
+  async existsProductosActivosByPresentacion(presentacionId: number): Promise<boolean> {
+    return this.persistenceService.existsProductosActivosByPresentacion(presentacionId);
+  }
+
 
   async findByIdWithoutRelations(id: number): Promise<Producto | null> {
     return this.persistenceService.findByIdWithoutRelations(id);

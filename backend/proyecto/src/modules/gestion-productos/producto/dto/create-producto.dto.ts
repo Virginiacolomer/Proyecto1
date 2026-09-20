@@ -27,6 +27,10 @@ export class CreateProductoDto {
   denominacion: string;
 
   @IsOptional()
+  @IsInt({ message: 'La presentación debe ser un número entero.' })
+  presentacionId?: number;
+
+  @IsOptional()
   @IsString()
   observacion?: string;
 

@@ -12,6 +12,7 @@ import { ProductoInvalidoException } from '../exceptions/producto-invalido.excep
 import { redondear5 } from 'src/modules/common/utils/number/redondeo';
 import { Linea } from '../../../linea/domain/entities/linea.entity';
 import { Marca } from '../../../marca/domain/entities/marca.entity';
+import { Presentacion } from '../../../presentacion/domain/entities/presentacion.entity';
 import { AlicuotaIva } from 'src/modules/organizacion/enums/alicuota-iva.enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { ProductoOperacion } from '../../../producto-operacion/entities/producto-operacion.entity';
@@ -30,6 +31,14 @@ export class Producto {
   @ApiProperty()
   @Column({ type: 'text' })
   denominacion: string;
+
+  @ApiProperty({ description: 'Presentación del producto' })
+  @ManyToOne(() => Presentacion, (presentacion) => presentacion.productos)
+  @JoinColumn({ name: 'presentacion_id' })
+  presentacion: Presentacion;
+
+  @Column({ type: 'int', nullable: true })
+  presentacionId?: number;
 
   @Index()
   @Column({ type: 'varchar', length: 255, nullable: true })
