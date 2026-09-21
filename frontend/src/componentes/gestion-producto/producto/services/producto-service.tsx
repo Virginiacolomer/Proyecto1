@@ -2,7 +2,7 @@ import axios from "axios";
 import axiosConfig from "../../../../utils/axiosConfig";
 
 import { createCrudService } from "../../../../utils/crudFactory";
-import { FormValues } from "../interfaces/interfaces-validaciones-item-prod-alternativo";
+import { FormValues } from "../interfaces/interfaces-validaciones-producto";
 import ApiService from "../../../../utils/apiService";
 
 
@@ -40,6 +40,30 @@ const ProductoService = {
       return result;
     } catch (error) {
       console.error("Error al actualizar producto:", error);
+      throw error;
+    }
+  },
+
+  actualizarPrecioIndividual: async (id: number, payload: any) => {
+    try {
+      const token = localStorage.getItem("Token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const { data } = await axios.put(`${apiUrl}/producto/${id}/precio`, payload, { headers });
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  obtenerHistorialPrecios: async (id: number) => {
+    try {
+      const token = localStorage.getItem("Token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const { data } = await axios.get(`${apiUrl}/producto/${id}/historial-precios`, { headers });
+      return data;
+    } catch (error) {
       throw error;
     }
   },

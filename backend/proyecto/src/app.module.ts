@@ -2,7 +2,9 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MarcaModule } from './modules/gestion-productos/marca/marca.module';
+import { PresentacionModule } from './modules/gestion-productos/presentacion/presentacion.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { SuperLineaModule } from './modules/gestion-productos/superlinea/super-linea.module';
 import { LineaModule } from './modules/gestion-productos/linea/linea.module';
 import { ProductoModule } from './modules/gestion-productos/producto/producto.module';
 import { ConfigModule } from '@nestjs/config';
@@ -53,6 +55,8 @@ import { CambioPreciosModule } from './modules/gestion-productos/cambio-precios/
     }),
 
     MarcaModule,
+    PresentacionModule,
+    SuperLineaModule,
     LineaModule,
     ProductoModule,
     CondicionIvaModule,

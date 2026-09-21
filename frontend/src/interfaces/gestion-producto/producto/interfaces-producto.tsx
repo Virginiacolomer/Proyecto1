@@ -45,9 +45,9 @@ export interface Producto {
   precioMayoristaConIva: number;
   precioClienteConIva: number;
   precioOfertaConIva: number;
-  presentacion: SelectPresentacion;
   itemsProveedor?: ItemProveedor[] | null;
- */
+  */
+  presentacion: SelectPresentacion;
   stockMinimo: number;
   cantidadPorPack: number;
   utilizaStockMinimo: boolean;

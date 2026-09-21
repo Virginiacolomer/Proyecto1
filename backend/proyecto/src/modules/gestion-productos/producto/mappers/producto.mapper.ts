@@ -4,6 +4,8 @@ import { GetProductoDto } from '../dto/get-producto.dto';
 import { UpdatePrecioDto } from '../dto/update-precio.dto';
 import { Usuario } from 'src/modules/gestion-usuario/usuario/domain/entities/usuario.entity';
 import { ProductoDto } from '../dto/producto.dto';
+import { HistorialPrecio } from '../domain/entities/historial-precio.entity';
+import { HistorialPrecioDto } from '../dto/historial-precio.dto';
 
 import {
   toReferenciaDto,
@@ -20,6 +22,7 @@ export class ProductoMapper {
     return {
       id: entity.id,
       denominacion: entity.denominacion,
+      presentacion: entity.presentacion?.denominacion ?? '',
       observacion: entity.observacion ?? '',
       codigoProveedorDenominacion:
         entity.codigoProveedor + ' - ' + entity.denominacion,
@@ -72,6 +75,7 @@ export class ProductoMapper {
     return {
       id: entity.id,
       denominacion: entity.denominacion,
+      presentacion: entity.presentacion ? toReferenciaDto(entity.presentacion) : undefined,
       observacion: entity.observacion ?? '',
       codigoProveedor: entity.codigoProveedor ?? '',
       codigoBarra: entity.codigoBarra ?? '',
@@ -104,5 +108,14 @@ export class ProductoMapper {
   }
 
 
+  static toHistorialDto(entity: HistorialPrecio): HistorialPrecioDto {
+    return {
+      id: entity.id,
+      precioAnterior: Number(entity.precioAnterior),
+      precioNuevo: Number(entity.precioNuevo),
+      motivo: entity.motivo,
+      fecha: entity.fecha,
+    };
+  }
    
 }

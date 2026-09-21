@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 
 import { CreateProductoDto } from '../../dto/create-producto.dto';
+import { HistorialPrecioDto } from '../../dto/historial-precio.dto';
 import { UpdateProductoDto } from '../../dto/update-producto.dto';
 import { NormalizeDenominacionPipe } from 'src/modules/common/pipes/normalize-denominations.pipe';
 import { AuthGuard } from 'src/modules/gestion-usuario/auth/auth.guard';
@@ -115,6 +116,7 @@ export class ProductoController {
       codigoReferencia,
       marcaId,
       lineaId,
+      superLineaId,
       proveedorId,
       conStock,
       skip,
@@ -127,6 +129,7 @@ export class ProductoController {
       codigoReferencia,
       marcaId,
       lineaId,
+      superLineaId,
       proveedorId,
       conStock,
       skip,
@@ -165,6 +168,17 @@ export class ProductoController {
   ) {
     this.logger.log(`Actualizando  ${this.ENTITY_NAME} con ID: ${id}`);
     return this.service.update(id, updateDto);
+  }
+
+
+  @Get(':id/historial-precios')
+  @Roles('Root', 'Administrador', 'Empleado')
+  @ApiOkResponse({ type: [HistorialPrecioDto] })
+  async getHistorialPrecios(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<HistorialPrecioDto[]> {
+    this.logger.log(`Consultando historial de precios de ${this.ENTITY_NAME} con ID: ${id}`);
+    return this.service.getHistorialPrecios(id);
   }
 
   @Delete(':id')

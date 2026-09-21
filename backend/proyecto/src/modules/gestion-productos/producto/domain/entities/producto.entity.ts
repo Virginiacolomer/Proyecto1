@@ -9,8 +9,11 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { BadRequestException } from '@nestjs/common';
+import { ProductoInvalidoException } from '../exceptions/producto-invalido.exception';
+import { redondear5 } from 'src/modules/common/utils/number/redondeo';
 import { Linea } from '../../../linea/domain/entities/linea.entity';
 import { Marca } from '../../../marca/domain/entities/marca.entity';
+import { Presentacion } from '../../../presentacion/domain/entities/presentacion.entity';
 import { AlicuotaIva } from 'src/modules/organizacion/enums/alicuota-iva.enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { ProductoOperacion } from '../../../producto-operacion/entities/producto-operacion.entity';
@@ -20,6 +23,8 @@ import { CantidadColumn } from 'src/modules/common/decorators/cantidad-column.de
 import { PorcentajeColumn } from 'src/modules/common/decorators/porcentaje-column.decorator';
 import { Proveedor } from 'src/modules/organizacion/proveedor/domain/entities/proveedor.entity';
 import { TipoAjustePrecio } from '../../../cambio-precios/domain/enums/tipo-ajuste-precio.enum';
+import { OneToMany } from 'typeorm';
+import { HistorialPrecio } from './historial-precio.entity';
 
 @Entity('producto')
 export class Producto {
@@ -30,6 +35,14 @@ export class Producto {
   @ApiProperty()
   @Column({ type: 'text' })
   denominacion: string;
+
+  @ApiProperty({ description: 'Presentación del producto' })
+  @ManyToOne(() => Presentacion, (presentacion) => presentacion.productos)
+  @JoinColumn({ name: 'presentacion_id' })
+  presentacion: Presentacion;
+
+  @Column({ type: 'int', nullable: true })
+  presentacionId?: number;
 
   @Index()
   @Column({ type: 'varchar', length: 255, nullable: true })
@@ -168,12 +181,63 @@ export class Producto {
   @ManyToOne(() => Producto, (producto) => producto.productosOperacion)
   productosOperacion: ProductoOperacion;
 
+  // ========== HISTORIAL DE PRECIOS ==========
+  @OneToMany(() => HistorialPrecio, (historial) => historial.producto)
+  historialPrecios: HistorialPrecio[];
 
   @Column({ type: 'int', default: 0 })
   sistema: number;
 
   @Column({ type: 'text', nullable: true })
   codigoReferencia?: string | null;
+
+  /**
+   * Valida y aplica costo, margen y stock según las reglas de negocio.
+   * Se ejecuta en el dominio (no en el DTO ni en el controller) para que
+   * ninguna vía de acceso (formulario, importación, otro servicio interno)
+   * pueda persistir un producto inconsistente.
+   *
+   * Si algún dato es inválido, no modifica el estado del producto y lanza
+   * ProductoInvalidoException con TODOS los errores encontrados.
+   */
+  establecerCostoMargenYStock(datos: {
+    costo?: number;
+    margen?: number;
+    stock?: number;
+    stockMinimo?: number;
+  }): void {
+    const costo = datos.costo ?? this.costo ?? 0;
+    const margen = datos.margen ?? this.porcentaje ?? 0;
+    const stock = datos.stock ?? this.stock ?? 0;
+    const stockMinimo = datos.stockMinimo ?? this.stockMinimo ?? 0;
+
+    const errores: string[] = [];
+
+    if (costo <= 0) {
+      errores.push('El costo debe ser mayor a cero');
+    }
+    if (margen < 0) {
+      errores.push('El margen no puede ser negativo');
+    }
+    if (stock < 0) {
+      errores.push('El stock actual no puede ser negativo');
+    }
+    if (stockMinimo < 0) {
+      errores.push('El stock mínimo no puede ser negativo');
+    }
+
+    if (errores.length > 0) {
+      throw new ProductoInvalidoException(errores);
+    }
+
+    this.costo = costo;
+    this.porcentaje = margen;
+    this.stock = stock;
+    this.stockMinimo = stockMinimo;
+    // El precio de venta siempre se deriva de costo + margen.
+    // Nunca se acepta un valor de precio cargado externamente.
+    this.precio = redondear5(costo + costo * (margen / 100));
+  }
 
   /**
    * Calcula cuánto quedaría el precio si se aplicara un aumento por

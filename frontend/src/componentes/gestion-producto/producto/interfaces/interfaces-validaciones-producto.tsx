@@ -17,6 +17,8 @@ export interface FormValues {
   costo?: number | null;
   precio?: number | null;
   porcentaje?: number | null;
+  motivo?: string;
+  ubicacion?: string | null;
   /* costoEnDolar?: boolean | null;
   costoDolar?: number | null;
   destacado?: boolean | null;
@@ -25,8 +27,8 @@ export interface FormValues {
   marcaId: number;
   /* subLineaId?: number | null */
   alicuotaIva: number | null;
-  /* ubicacion?: string | null;
-  presentacionId: number; */
+  /* ubicacion?: string | null; */
+  presentacionId: number;
   stockMinimo?: number;
   cantidadPorPack?: number;
   utilizaStockMinimo?: boolean;
@@ -71,6 +73,7 @@ export const schema = (utilizaStockMinimo: boolean, utilizaPack: boolean, usaOfe
       return value>= costo;
     }),
     porcentaje: yup.number().typeError("El porcentaje debe ser un valor númerico").min(0,"El porcentaje mínimo debe ser mayor o igual a 0").max(999, "El porcentaje máximo permitido es de 999").optional().nullable(),
+    motivo: yup.string().optional(),
     /* costoEnDolar: yup.boolean().optional().nullable(),
     costoDolar: yup.number().optional().nullable(),
     destacado: yup.boolean().optional().nullable(),
@@ -92,12 +95,12 @@ export const schema = (utilizaStockMinimo: boolean, utilizaPack: boolean, usaOfe
       .oneOf(Object.values(AlicuotaIva), "Alicuota IVA inválida")
       .required("La alícuota IVA es obligatoria.")
       .nullable(),
-    /* ubicacion: yup.string().optional().max(255, "Máximo 255 caracteres.").nullable(),
+    /* ubicacion: yup.string().optional().max(255, "Máximo 255 caracteres.").nullable(), */
     presentacionId: yup
       .number()
-      .typeError("La unidad de medida es obligatoria.")
-      .required("La unidad de medida es obligatoria."),
-    subLineaId: yup
+      .typeError("La presentación es obligatoria.")
+      .required("La presentación es obligatoria."),
+    /* subLineaId: yup
     .number()
     .typeError("La sublinea es obligatoria.")
     .optional()
@@ -176,9 +179,8 @@ export const transformData = (producto: Producto): FormValues => {
    // ubicacion: producto.ubicacion ?? null,
     marcaId: producto.marca.id ?? 0,
     lineaId: producto.linea.id ?? 0,
-   /*  subLineaId: producto.sublinea?.id ?? 0,
-    presentacionId: producto.presentacion.id ?? 0,
- */
+    /*  subLineaId: producto.sublinea?.id ?? 0, */
+    presentacionId: producto.presentacion?.id ?? 0,
     stockMinimo: producto.stockMinimo ?? null,
     cantidadPorPack: producto.cantidadPorPack ?? null,
     utilizaStockMinimo: producto.utilizaStockMinimo,
