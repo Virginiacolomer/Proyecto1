@@ -317,15 +317,17 @@ export class ProductoService {
    */
   private async validarYPrepararCreacion(dto: CreateProductoDto) {
     // Validar datos  (Domain - sin DB)
-    this.intrinsicValidationService.validarDatosBasicos({
-      denominacion: dto.denominacion,
-      marcaId: dto.marcaId,
-      lineaId: dto.lineaId,
-      alicuotaIva: dto.alicuotaIva,
-    });
+    if (dto.denominacion) {
+      this.intrinsicValidationService.validarDatosBasicos({
+        denominacion: dto.denominacion,
+        marcaId: dto.marcaId,
+        lineaId: dto.lineaId,
+        alicuotaIva: dto.alicuotaIva,
+      });
 
-    // Validar unicidad (Infrastructure - DB)
-    await this.uniquenessValidator.validarDenominacionUnica(dto.denominacion);
+      // Validar unicidad (Infrastructure - DB)
+      await this.uniquenessValidator.validarDenominacionUnica(dto.denominacion);
+    }
 
     if (dto.codigoProveedor) {
       await this.uniquenessValidator.validarCodigoProveedorUnico(

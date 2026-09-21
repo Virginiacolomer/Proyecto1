@@ -358,7 +358,10 @@ export default function RegistrarActualizarProductoForm({
                         disabled={producto && producto.sistema > 0 ? true : false}
                         onKeyDown={enterToObservacion}
                         inputRef={denominacionProductoRef}
-                        onChange={() => setEsDenominacionManual(true)}
+                        onChange={(e) => {
+                          const valor = e.target.value;
+                          setEsDenominacionManual(Boolean(valor && valor.trim().length > 0));
+                        }}
                       />
                     </div>
 

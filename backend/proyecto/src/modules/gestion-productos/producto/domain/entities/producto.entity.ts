@@ -242,7 +242,11 @@ export class Producto {
   generarDenominacionAutomatica(presentacionParam?: string): string {
     const nombreMarca = this.marca?.denominacion?.trim() || '';
     const nombreLinea = this.linea?.denominacion?.trim() || '';
-    const nombrePresentacion = (presentacionParam ?? this.presentacion ?? '')?.trim() || '';
+    const textoPresentacion =
+      typeof this.presentacion === 'string'
+        ? this.presentacion
+        : (this.presentacion as any)?.denominacion;
+    const nombrePresentacion = (presentacionParam ?? textoPresentacion ?? '')?.trim() || '';
 
     const partes = [nombreMarca, nombreLinea, nombrePresentacion].filter(Boolean);
     const resultado = partes.join(' ').replace(/\s+/g, ' ').trim();
