@@ -240,23 +240,34 @@ export class Producto {
   }
 
   /**
-   * Calcula cuánto quedaría el precio si se aplicara un aumento por
-   * porcentaje o por monto fijo, sin modificar el producto todavía.
-   * Se usa tanto para la previsualización ("simular") como, internamente,
-   * antes de confirmar el cambio.
+   * Calcula cómo quedaría el producto si se aplicara un aumento por
+   * porcentaje o por monto fijo, SIN modificarlo todavía.
+   *
+   * Como el precio siempre se deriva de costo + margen (ver
+   * establecerCostoMargenYStock), un aumento de precio se traduce en un
+   * COSTO nuevo: el margen se mantiene y el costo se despeja para que el
+   * precio resultante sea el buscado. Si el costo actual es 0, el aumento
+   * de monto fijo igual da un costo distinto de cero (parte del precio 0).
    *
    * Decisión de diseño #2 (HU CR-006): el cálculo vive en la entidad,
    * no en el service que orquesta el aumento masivo.
    */
-  simularAumento(tipoAjuste: TipoAjustePrecio, valor: number): number {
+  calcularAumento(
+    tipoAjuste: TipoAjustePrecio,
+    valor: number,
+  ): { costoNuevo: number; precioNuevo: number } {
     const precioActual = this.precio ?? 0;
+    const margen = this.porcentaje ?? 0;
 
-    const precioBruto =
+    const precioObjetivo =
       tipoAjuste === TipoAjustePrecio.PORCENTAJE
         ? precioActual + precioActual * (valor / 100)
         : precioActual + valor;
 
-    const precioNuevo = Math.round(precioBruto * 100) / 100;
+    const costoNuevo = redondear5(precioObjetivo / (1 + margen / 100));
+    // Mismo cálculo que establecerCostoMargenYStock, para que lo que se
+    // muestra en la previsualización sea exactamente lo que se guarda.
+    const precioNuevo = redondear5(costoNuevo + costoNuevo * (margen / 100));
 
     if (precioNuevo <= 0) {
       throw new BadRequestException(
@@ -264,17 +275,28 @@ export class Producto {
       );
     }
 
-    return precioNuevo;
+    return { costoNuevo, precioNuevo };
+  }
+
+  /** Precio que tendría el producto tras el aumento (para la previsualización). */
+  simularAumento(tipoAjuste: TipoAjustePrecio, valor: number): number {
+    return this.calcularAumento(tipoAjuste, valor).precioNuevo;
   }
 
   /**
-   * Deja el precio nuevo asentado en el producto. Devuelve el precio
-   * anterior para que quien orquesta el aumento masivo arme el registro
-   * de HistorialPrecio (el motivo/usuario/lote no son datos del Producto).
+   * Aplica el aumento: actualiza el costo y deja que
+   * establecerCostoMargenYStock recalcule el precio (y valide). Devuelve el
+   * precio anterior para que quien orquesta el aumento masivo arme el
+   * registro de HistorialPrecio (motivo/usuario/lote no son datos del
+   * Producto).
    */
-  confirmarAumento(precioNuevo: number): number {
+  confirmarAumento(tipoAjuste: TipoAjustePrecio, valor: number): number {
     const precioAnterior = this.precio ?? 0;
-    this.precio = precioNuevo;
+    const { costoNuevo } = this.calcularAumento(tipoAjuste, valor);
+
+    this.establecerCostoMargenYStock({ costo: costoNuevo });
+    this.fechaCosto = new Date();
+
     return precioAnterior;
   }
 }

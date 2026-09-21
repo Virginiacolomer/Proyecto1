@@ -23,11 +23,13 @@ describe('CambioPreciosService (CR-006)', () => {
   };
   let dataSource: { createQueryRunner: jest.Mock };
 
+  // El precio se deriva de costo + margen (HU-008): con margen 0, el costo
+  // es igual al precio.
   function crearProducto(id: number, denominacion: string, precio: number): Producto {
     const producto = new Producto();
     producto.id = id;
     producto.denominacion = denominacion;
-    producto.precio = precio;
+    producto.establecerCostoMargenYStock({ costo: precio, margen: 0, stock: 0, stockMinimo: 0 });
     return producto;
   }
 
@@ -95,6 +97,45 @@ describe('CambioPreciosService (CR-006)', () => {
       expect.objectContaining({ productoId: 1, precioActual: 1000, precioNuevo: 1100 }),
       expect.objectContaining({ productoId: 2, precioActual: 2000, precioNuevo: 2200 }),
     ]);
+
+    // Cada producto deja su registro en el historial (Escenario 2 de la HU)
+    // con precio anterior, precio nuevo, motivo, tipo de ajuste y lote.
+    expect(queryRunner.manager.create).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        precioAnterior: 1000,
+        precioNuevo: 1100,
+        tipoAjuste: TipoAjustePrecio.PORCENTAJE,
+        valorAplicado: 10,
+        motivo: 'Aumento de línea Gaseosas',
+        loteId: resultado.loteId,
+        usuarioCreatedId: 1,
+      }),
+    );
+  });
+
+  // El aumento se traduce en un COSTO nuevo (el precio siempre sale de
+  // costo + margen, HU-008): el producto que se guarda tiene el costo
+  // actualizado y el mismo margen.
+  it('guarda el producto con el costo nuevo y el margen sin cambios', async () => {
+    const producto = crearProducto(1, 'Coca-Cola 2L', 1000);
+    producto.establecerCostoMargenYStock({ margen: 15 }); // precio $1150
+    productoRepository.findActivosPorLineaOMarca.mockResolvedValue([producto]);
+
+    const resultado = await service.aplicar({
+      tipoAjuste: TipoAjustePrecio.PORCENTAJE,
+      valor: 10,
+      motivo: 'Aumento con margen',
+      usuarioCreatedId: 1,
+    } as any);
+
+    expect(resultado.actualizados[0]).toEqual(
+      expect.objectContaining({ precioActual: 1150, precioNuevo: 1265 }),
+    );
+    expect(queryRunner.manager.save).toHaveBeenCalledWith(
+      Producto,
+      expect.objectContaining({ costo: 1100, porcentaje: 15, precio: 1265 }),
+    );
   });
 
   // Caso de prueba 2: monto fijo a todos los productos (sin línea/marca).
@@ -180,5 +221,29 @@ describe('CambioPreciosService (CR-006)', () => {
     // solo para el que falló -> el error de uno no frena a los demás.
     expect(queryRunner.commitTransaction).toHaveBeenCalledTimes(2);
     expect(queryRunner.rollbackTransaction).toHaveBeenCalledTimes(1);
+  });
+  // Decisión del equipo: un producto con costo $0 recibe el monto fijo y su
+  // costo pasa a ser distinto de cero.
+  it('un producto con costo $0 pasa a tener costo > 0 con un monto fijo', async () => {
+    const sinCosto = new Producto();
+    sinCosto.id = 9;
+    sinCosto.denominacion = 'Producto sin costo';
+    sinCosto.costo = 0;
+    sinCosto.porcentaje = 0;
+    sinCosto.precio = 0;
+    productoRepository.findActivosPorLineaOMarca.mockResolvedValue([sinCosto]);
+
+    const resultado = await service.aplicar({
+      tipoAjuste: TipoAjustePrecio.MONTO_FIJO,
+      valor: 100,
+      motivo: 'Carga de costo faltante',
+      usuarioCreatedId: 1,
+    } as any);
+
+    expect(resultado.fallidos).toHaveLength(0);
+    expect(resultado.actualizados[0]).toEqual(
+      expect.objectContaining({ precioActual: 0, precioNuevo: 100 }),
+    );
+    expect(sinCosto.costo).toBeGreaterThan(0);
   });
 });

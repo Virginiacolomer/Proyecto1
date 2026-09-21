@@ -103,13 +103,34 @@ describe('Producto - establecerCostoMargenYStock', () => {
  * Tests de la regla de negocio de CR-006 (Actualización masiva de precios)
  * a nivel de la entidad Producto, que es donde vive el cálculo
  * (Decisión de diseño #2).
+ *
+ * Como el precio siempre se deriva de costo + margen (HU-008), el aumento
+ * se traduce en un costo nuevo: el margen no cambia y el precio resultante
+ * sale de la misma fórmula que usa establecerCostoMargenYStock.
  */
 describe('Producto - simularAumento / confirmarAumento (CR-006)', () => {
-  function crearProducto(precio: number, denominacion = 'Coca-Cola 2L'): Producto {
+  // Producto con el costo y margen indicados; el precio se deriva solo.
+  function crearProducto(
+    costo: number,
+    margen = 0,
+    denominacion = 'Coca-Cola 2L',
+  ): Producto {
     const producto = new Producto();
     producto.id = 1;
     producto.denominacion = denominacion;
-    producto.precio = precio;
+    producto.establecerCostoMargenYStock({ costo, margen, stock: 0, stockMinimo: 0 });
+    return producto;
+  }
+
+  // Producto con costo 0 (dato que HU-008 ya no deja crear, pero que puede
+  // existir en la base por datos anteriores).
+  function crearProductoConCostoCero(margen = 0): Producto {
+    const producto = new Producto();
+    producto.id = 1;
+    producto.denominacion = 'Producto sin costo';
+    producto.costo = 0;
+    producto.porcentaje = margen;
+    producto.precio = 0;
     return producto;
   }
 
@@ -137,15 +158,42 @@ describe('Producto - simularAumento / confirmarAumento (CR-006)', () => {
       expect(producto.simularAumento(TipoAjustePrecio.MONTO_FIJO, 50)).toBe(esperado);
     });
 
-    it('redondea el resultado a 2 decimales', () => {
-      const producto = crearProducto(999.995);
-      expect(producto.simularAumento(TipoAjustePrecio.PORCENTAJE, 10)).toBeCloseTo(1099.99, 2);
+    it('con margen 15%: el precio sube el 10% pedido (costo $1000 → precio $1150 → $1265)', () => {
+      const producto = crearProducto(1000, 15);
+      expect(producto.precio).toBe(1150);
+      expect(producto.simularAumento(TipoAjustePrecio.PORCENTAJE, 10)).toBe(1265);
+    });
+
+    it('con margen 15%: el monto fijo se suma al PRECIO ($1150 + $50 → $1200)', () => {
+      const producto = crearProducto(1000, 15);
+      expect(producto.simularAumento(TipoAjustePrecio.MONTO_FIJO, 50)).toBe(1200);
+    });
+
+    it('no modifica el producto (solo simula)', () => {
+      const producto = crearProducto(1000, 15);
+      producto.simularAumento(TipoAjustePrecio.PORCENTAJE, 10);
+      expect(producto.costo).toBe(1000);
+      expect(producto.precio).toBe(1150);
     });
 
     it('trata un precio undefined como $0', () => {
-      const producto = crearProducto(0);
-      producto.precio = undefined;
+      const producto = new Producto();
+      producto.denominacion = 'Sin precio';
       expect(producto.simularAumento(TipoAjustePrecio.MONTO_FIJO, 100)).toBe(100);
+    });
+
+    // Producto con costo 0: el monto fijo se suma y el costo pasa a ser
+    // distinto de cero (decisión del equipo).
+    it('con costo $0 y MONTO_FIJO de $100, el precio pasa a $100', () => {
+      const producto = crearProductoConCostoCero();
+      expect(producto.simularAumento(TipoAjustePrecio.MONTO_FIJO, 100)).toBe(100);
+    });
+
+    it('con costo $0 y PORCENTAJE no se puede salir de cero (se rechaza)', () => {
+      const producto = crearProductoConCostoCero();
+      expect(() => producto.simularAumento(TipoAjustePrecio.PORCENTAJE, 10)).toThrow(
+        BadRequestException,
+      );
     });
 
     // Caso de prueba 3 (Validación de precio resultante).
@@ -161,7 +209,7 @@ describe('Producto - simularAumento / confirmarAumento (CR-006)', () => {
     });
 
     it('el mensaje de error incluye la denominación y el precio inválido calculado', () => {
-      const producto = crearProducto(100, 'Sprite 2L');
+      const producto = crearProducto(100, 0, 'Sprite 2L');
       expect(() => producto.simularAumento(TipoAjustePrecio.MONTO_FIJO, -150)).toThrow(
         /Sprite 2L.*-50/,
       );
@@ -176,12 +224,52 @@ describe('Producto - simularAumento / confirmarAumento (CR-006)', () => {
   });
 
   describe('confirmarAumento', () => {
-    it('actualiza el precio del producto y devuelve el precio anterior', () => {
+    it('devuelve el precio anterior y deja el precio nuevo derivado del costo', () => {
       const producto = crearProducto(1000);
-      const precioAnterior = producto.confirmarAumento(1100);
+      const precioAnterior = producto.confirmarAumento(TipoAjustePrecio.PORCENTAJE, 10);
 
       expect(precioAnterior).toBe(1000);
       expect(producto.precio).toBe(1100);
+    });
+
+    it('el aumento se aplica sobre el COSTO y el margen no cambia', () => {
+      const producto = crearProducto(1000, 15);
+      producto.confirmarAumento(TipoAjustePrecio.PORCENTAJE, 10);
+
+      expect(producto.costo).toBe(1100);
+      expect(producto.porcentaje).toBe(15);
+      expect(producto.precio).toBe(1265);
+    });
+
+    it('el precio sigue siendo costo + margen tras el aumento (no queda un precio suelto)', () => {
+      const producto = crearProducto(870, 15);
+      producto.confirmarAumento(TipoAjustePrecio.MONTO_FIJO, 50);
+
+      const esperado = Math.round((producto.costo! + producto.costo! * 0.15) * 100000) / 100000;
+      expect(producto.precio).toBe(esperado);
+    });
+
+    it('con costo $0 y MONTO_FIJO: el costo pasa a ser distinto de cero', () => {
+      const producto = crearProductoConCostoCero(20);
+      producto.confirmarAumento(TipoAjustePrecio.MONTO_FIJO, 100);
+
+      expect(producto.costo).toBeGreaterThan(0);
+      expect(producto.precio).toBeCloseTo(100, 3);
+    });
+
+    it('si el aumento es inválido no modifica el producto', () => {
+      const producto = crearProducto(100);
+      expect(() => producto.confirmarAumento(TipoAjustePrecio.MONTO_FIJO, -150)).toThrow(
+        BadRequestException,
+      );
+      expect(producto.costo).toBe(100);
+      expect(producto.precio).toBe(100);
+    });
+
+    it('actualiza la fecha del costo', () => {
+      const producto = crearProducto(1000);
+      producto.confirmarAumento(TipoAjustePrecio.PORCENTAJE, 10);
+      expect(producto.fechaCosto).toBeInstanceOf(Date);
     });
   });
 });

@@ -87,8 +87,10 @@ export class CambioPreciosService {
     await queryRunner.startTransaction();
 
     try {
-      const precioNuevo = producto.simularAumento(dto.tipoAjuste, dto.valor);
-      const precioAnterior = producto.confirmarAumento(precioNuevo);
+      // El aumento se traduce en un costo nuevo; el precio se recalcula con
+      // la regla costo + margen (HU-008) dentro de la entidad.
+      const precioAnterior = producto.confirmarAumento(dto.tipoAjuste, dto.valor);
+      const precioNuevo = producto.precio ?? 0;
 
       await queryRunner.manager.save(Producto, producto);
 
