@@ -40,13 +40,14 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
       const repo = this.uow.getRepository(Producto);
       this.logger.log(`Creando un nuevo p ${this.ENTITY_NAME}`);
 
-      const { costo, porcentaje, stock, stockMinimo, ...datosBase } =
+      const { costo, porcentaje, stock, stockMinimo, ...dataSinItems } =
         data as CreateProductoDto & Record<string, any>;
 
       const nuevaEntity = repo.create({
-        ...datosBase,
+        ...dataSinItems,
         linea,
         marca,
+        presentacion: dataSinItems.presentacionId ? ({ id: dataSinItems.presentacionId } as any) : null,
         usuarioCreated: usuario,
       });
 
@@ -82,6 +83,8 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
         .createQueryBuilder('producto')
         .leftJoinAndSelect('producto.linea', 'linea')
         .leftJoinAndSelect('producto.marca', 'marca')
+        .leftJoinAndSelect('producto.presentacion', 'presentacion')
+        .withDeleted()
         .where('producto.id = :id', { id })
         .andWhere('producto.deletedAt IS NULL')
         .getOne();
@@ -111,6 +114,8 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
         .leftJoinAndSelect('producto.usuarioCreated', 'usuarioCreated')
         .leftJoinAndSelect('producto.usuarioUpdated', 'usuarioUpdated')
         .leftJoinAndSelect('producto.usuarioDeleted', 'usuarioDeleted')
+        .leftJoinAndSelect('producto.presentacion', 'presentacion')
+        .withDeleted()
         .where('producto.id = :id', { id })
 
         .getOne();
@@ -187,6 +192,7 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
       Object.assign(entity, dataSinItems, {
         linea,
         marca,
+        presentacion: dataSinItems.presentacionId ? ({ id: dataSinItems.presentacionId } as any) : null,
       });
 
       if (data.denominacion !== undefined) {
@@ -235,6 +241,7 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
     codigoReferencia: string,
     marca_id: number,
     linea_id: number,
+    superLineaId: number,
     proveedor_id: number,
     conStock: boolean,
     skip: number,
@@ -245,6 +252,9 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
       .createQueryBuilder('producto')
       .leftJoinAndSelect('producto.marca', 'marca')
       .leftJoinAndSelect('producto.linea', 'linea')
+      .leftJoinAndSelect('linea.superlinea', 'superlinea')
+      .leftJoinAndSelect('producto.presentacion', 'presentacion')
+      .withDeleted()
 
     if (denominacion || codigoProveedor || codigoReferencia) {
       const condiciones: string[] = [];
@@ -252,7 +262,7 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
 
       if (denominacion) {
         condiciones.push(
-          `UPPER(producto.denominacion) LIKE UPPER(:denominacion)`,
+          `(UPPER(producto.denominacion) LIKE UPPER(:denominacion) OR UPPER(linea.denominacion) LIKE UPPER(:denominacion) OR UPPER(superlinea.denominacion) LIKE UPPER(:denominacion))`
         );
         parametros.denominacion = `%${denominacion}%`;
       }
@@ -286,6 +296,9 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
     }
     if (linea_id) {
       query.andWhere('linea.id = :linea_id', { linea_id });
+    }
+    if (superLineaId) {
+      query.andWhere('linea.super_linea_id = :superLineaId', { superLineaId });
     }
 
     this.logger.warn(`conStock llega como: ${conStock} (${typeof conStock})`);
@@ -478,6 +491,17 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
       .where('producto.linea_id = :lineaId', { lineaId })
       .andWhere('producto.deletedAt IS NULL')
       .limit(1) // opcional, para optimizar
+      .getCount();
+
+    return count > 0;
+  }
+
+  async existsProductosActivosByPresentacion(presentacionId: number): Promise<boolean> {
+    const count = await this.repository
+      .createQueryBuilder('producto')
+      .where('producto.presentacion_id = :presentacionId', { presentacionId })
+      .andWhere('producto.deletedAt IS NULL')
+      .limit(1)
       .getCount();
 
     return count > 0;

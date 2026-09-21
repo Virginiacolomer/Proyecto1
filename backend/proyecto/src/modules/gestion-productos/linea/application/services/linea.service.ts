@@ -159,7 +159,7 @@ export class LineaService {
 
     if (tieneProductosActivos) {
       throw new ConflictException(
-        'No se puede eliminar la marca porque está asociada a productos activos.',
+        'No se puede eliminar la línea porque está asociada a productos activos.',
       );
     }
 

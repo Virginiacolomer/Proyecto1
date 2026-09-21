@@ -77,6 +77,7 @@ export class ProductoRepository implements IProductoRepository {
     codigoReferencia: string,
     marca_id: number,
     linea_id: number,
+    superLineaId: number,
     proveedor_id: number,
     conStock: boolean,
     skip: number,
@@ -89,6 +90,7 @@ export class ProductoRepository implements IProductoRepository {
       codigoReferencia,
       marca_id,
       linea_id,
+      superLineaId,
       proveedor_id,
       conStock,
       skip,
@@ -167,6 +169,10 @@ export class ProductoRepository implements IProductoRepository {
   }
   async existsProductosActivosByLinea(lineaId: number): Promise<boolean> {
     return this.persistenceService.existsProductosActivosByLinea(lineaId);
+  }
+
+  async existsProductosActivosByPresentacion(presentacionId: number): Promise<boolean> {
+    return this.persistenceService.existsProductosActivosByPresentacion(presentacionId);
   }
 
 

@@ -27,6 +27,7 @@ export interface IProductoRepository {
     codigoReferencia: string,
     marca_id: number,
     linea_id: number,
+    superLineaId: number,
     proveedor_id: number,
     conStock: boolean,
     skip: number,
@@ -78,6 +79,7 @@ export interface IProductoRepository {
   existsByCodigoProveedor(codigoProveedor: string, excludeId: number): Promise<boolean>;
   existsProductosActivosByMarca(marcaId: number): Promise<boolean>;
   existsProductosActivosByLinea(lineaId: number): Promise<boolean>;
+  existsProductosActivosByPresentacion(presentacionId: number): Promise<boolean>;
 
   findByIds(ids: number[]): Promise<Producto[]>;
 }

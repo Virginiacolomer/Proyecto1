@@ -12,6 +12,7 @@ import CantidadesInput from "../../../herramientas/formateo-de-campos/cantidades
 import { Producto, SelectPresentacion } from "../../../../interfaces/gestion-producto/producto/interfaces-producto";
 import { SelectMarca } from "../../../../interfaces/gestion-producto/marca/interfaces-marca";
 import { Linea, SelectLinea } from "../../../../interfaces/gestion-producto/linea/interfaces-linea";
+import PresentacionService from "../../presentacion/services/presentacion-service";
 import { AlicuotaIva, ResponsePost } from "../../../../interfaces/generales/interfaces-generales";
 import Select from "react-select";
 import { useEnterFocus } from "../../../herramientas/formateo-de-campos/movimiento-campos";
@@ -26,8 +27,10 @@ import { FormValues, schema, transformData, transformarItemsProdAlternativo } fr
 import LineasSelector from "../componentes/configuracion/lineas-selector";
 import EncabezadoFormularios from "../../../ui/encabezadoFormularios";
 import MarcasSelector from "../componentes/configuracion/marcas-selector";
+import PresentacionesSelector from "../componentes/configuracion/presentacion-selector";
 import { getUsuarioId } from "../../../../utils/auth";
 import RegistrarActualizarLineaForm from "../../linea/utils/registrar-actualizar-linea";
+import RegistrarActualizarPresentacionForm from "../../presentacion/utils/registrar-actualizar-presentacion";
 import PorcentajeInput from "../../../herramientas/formateo-de-campos/porcentaje-input";
 
 
@@ -52,7 +55,7 @@ export default function RegistrarActualizarProductoForm({
   console.log("Configuración del sistema:", configuracion);
 
   const methods = useForm<FormValues>({
-    resolver: yupResolver(schema(rStockCritico, pack, usaOferta)),
+    resolver: yupResolver(schema(rStockCritico, pack, usaOferta)) as any,
     defaultValues: producto
       ? transformData(producto)
       : {
@@ -76,13 +79,16 @@ export default function RegistrarActualizarProductoForm({
 
   const [marcas, setMarcas] = React.useState<SelectMarca[]>([]);
   const [lineas, setLineas] = React.useState<SelectLinea[]>([]);
-
+  const [presentaciones, setPresentaciones] = React.useState<SelectPresentacion[]>([]);
   const [denominacionMarca, setDenominacionMarca] = useState(" ");
   const [denominacionLinea, setDenominacionLinea] = useState(" ");
+  const [denominacionPresentacion, setDenominacionPresentacion] = useState(" ");
   const [selectedLinea, setSelectedLinea] = React.useState<SelectLinea>();
   const [selectedMarca, setSelectedMarca] = React.useState<SelectMarca>();
+  const [selectedPresentacion, setSelectedPresentacion] = React.useState<SelectPresentacion>();
   const [mostrarFormularioLinea, setMostrarFormularioLinea] = useState(false);
   const [mostrarFormularioMarca, setMostrarFormularioMarca] = useState(false);
+  const [mostrarFormularioPresentacion, setMostrarFormularioPresentacion] = useState(false);
   const [itemProdAlternativoSinAgregar, setItemProdAlternativoSinAgregar] = useState(false);
   const [esDenominacionManual, setEsDenominacionManual] = useState<boolean>(!!producto);
 
@@ -91,7 +97,15 @@ export default function RegistrarActualizarProductoForm({
   const cantidadPorPack = watch("cantidadPorPack");
   const utilizaStockMinimo = watch("utilizaStockMinimo");
   const utilizaPack = watch("utilizaPack");
+  const costo = watch("costo");
+  const porcentaje = watch("porcentaje");
 
+  useEffect(() => {
+    const c = Number(costo) || 0;
+    const p = Number(porcentaje) || 0;
+    const precioCalculado = c + (c * (p / 100));
+    setValue("precio", precioCalculado, { shouldValidate: true });
+  }, [costo, porcentaje, setValue]);
 
   //=============================== CONSTANTES PARA MOVIMIENTO ENTRE CAMPOS ==================================
   const denominacionProductoRef = useRef<HTMLInputElement>(null);
@@ -106,10 +120,13 @@ export default function RegistrarActualizarProductoForm({
   const selectLineaRef = useRef<HTMLDivElement>(null);
   const denominacionMarcaRef = useRef<HTMLInputElement>(null);
   const selectMarcaRef = useRef<HTMLDivElement>(null);
+  const denominacionPresentacionRef = useRef<HTMLInputElement>(null);
+  const selectPresentacionRef = useRef<HTMLDivElement>(null);
 
   const enterToObservacion = useEnterFocus(observacionRef);
   const enterToPrecioOferta = useEnterFocus(precioOfertaRef);
   const enterToDenominacionMarca = useEnterFocus(denominacionMarcaRef);
+  const enterToDenominacionPresentacion = useEnterFocus(denominacionPresentacionRef);
 
   //=============================== FUNCIONALIDAD ==================================
 
@@ -144,7 +161,10 @@ export default function RegistrarActualizarProductoForm({
           setValue("marcaId", producto.marca.id || 0);
           setSelectedMarca(producto.marca);
 
-
+          if (producto.presentacion) {
+            setValue("presentacionId", producto.presentacion.id || 0);
+            setSelectedPresentacion(producto.presentacion);
+          }
           setValue("denominacion", producto.denominacion || "");
           setValue("observacion", producto.observacion || null);
           setValue("codigoProveedor", producto.codigoProveedor || "");
@@ -190,16 +210,19 @@ export default function RegistrarActualizarProductoForm({
         if (!confirmar) return; // el usuario canceló
       }
 
+      // Extraemos precio porque el backend lo rechaza (se calcula solo allá)
+      const { precio, ...datosParaBackend } = formData as any;
+
       if (producto) {
         const payload = {
-          ...formData,
+          ...datosParaBackend,
           usuarioUpdatedId: usuarioId,
         };
 
         response = await ProductoService.actualizar(producto.id, payload);
       } else {
         const payload = {
-          ...formData,
+          ...datosParaBackend,
           usuarioCreatedId: usuarioId,
         };
 
@@ -238,13 +261,21 @@ export default function RegistrarActualizarProductoForm({
           console.log("No se encontró una marca con la denominación ingresada.");
         }
       }
-
+      if (select === "PRESENTACION") {
+        const res = await PresentacionService.obtener({ denominacion: denominacionPresentacion });
+        if (res) {
+          console.log("Presentaciones encontradas:", res);
+          setPresentaciones(res.data);
+        } else {
+          console.log("No se encontró una presentacion con la denominación ingresada.");
+        }
+      }
     } catch (error) {
       console.error("Error al buscar por código:", error);
     }
   };
 
-  const handleEnterEnSelect = async (e: React.KeyboardEvent<HTMLInputElement>, select: string) => {
+  const handleEnterEnSelect = async (e: React.KeyboardEvent, select: string) => {
     if (e.key === "Enter") {
       e.preventDefault();
 
@@ -254,6 +285,10 @@ export default function RegistrarActualizarProductoForm({
 
       if (select === "MARCA") {
         handleBuscarPorDenominacion("MARCA");
+      }
+
+      if (select === "PRESENTACION") {
+        handleBuscarPorDenominacion("PRESENTACION");
       }
 
       // Esperar un poco (opcional, si el botón hace una búsqueda antes)
@@ -266,6 +301,10 @@ export default function RegistrarActualizarProductoForm({
 
         if (select === "LINEA") {
           selectDiv = selectLineaRef.current;
+        }
+
+        if (select === "PRESENTACION") {
+          selectDiv = selectPresentacionRef.current;
         }
 
         if (select === "TIPO-PRODUCTO") {
@@ -379,7 +418,7 @@ export default function RegistrarActualizarProductoForm({
                     value={watch("precio") || 0}
                     onChange={(value) => setValue("precio", value, { shouldValidate: true })}
                     maxDigits={9}
-                    disabled={producto && producto.sistema > 0 ? true : false}
+                    disabled={true}
                   />
                   <PorcentajeInput
                     name="porcentaje"
@@ -528,7 +567,7 @@ export default function RegistrarActualizarProductoForm({
                     setSelectedLinea(linea || undefined);
 
                     if (!esDenominacionManual) {
-                      const partes = [selectedMarca?.denominacion, linea?.denominacion].filter(Boolean);
+                      const partes = [selectedMarca?.denominacion, linea?.denominacion, selectedPresentacion?.denominacion].filter(Boolean);
                       methods.setValue("denominacion", partes.join(" "), { shouldValidate: true });
                     }
                   }}
@@ -551,11 +590,34 @@ export default function RegistrarActualizarProductoForm({
                     setSelectedMarca(marca || undefined);
 
                     if (!esDenominacionManual) {
-                      const partes = [marca?.denominacion, selectedLinea?.denominacion].filter(Boolean);
+                      const partes = [marca?.denominacion, selectedLinea?.denominacion, selectedPresentacion?.denominacion].filter(Boolean);
                       methods.setValue("denominacion", partes.join(" "), { shouldValidate: true });
                     }
                   }}
                   onAgregarMarca={() => setMostrarFormularioMarca(true)}
+                />
+
+                <PresentacionesSelector
+                  denominacionPresentacion={denominacionPresentacion}
+                  setDenominacionPresentacion={setDenominacionPresentacion}
+                  denominacionPresentacionRef={denominacionPresentacionRef}
+                  selectPresentacionRef={selectPresentacionRef}
+                  presentaciones={presentaciones}
+                  selectedPresentacion={selectedPresentacion}
+                  presentacionId={watch("presentacionId") as any}
+                  disabled={producto && producto.sistema > 0}
+                  error={errors.presentacionId?.message}
+                  onEnterPresentacion={(e) => handleEnterEnSelect(e, "PRESENTACION")}
+                  onChangePresentacion={(pres) => {
+                    methods.setValue("presentacionId", pres?.id || 0);
+                    setSelectedPresentacion(pres as any);
+
+                    if (!esDenominacionManual) {
+                      const partes = [selectedMarca?.denominacion, selectedLinea?.denominacion, pres?.denominacion].filter(Boolean);
+                      methods.setValue("denominacion", partes.join(" "), { shouldValidate: true });
+                    }
+                  }}
+                  onAgregarPresentacion={() => setMostrarFormularioPresentacion(true)}
                 />
 
               </div>
@@ -607,7 +669,15 @@ export default function RegistrarActualizarProductoForm({
           />
         )}
 
-
+        {mostrarFormularioPresentacion && (
+          <RegistrarActualizarPresentacionForm
+            onClose={() => setMostrarFormularioPresentacion(false)}
+            onSuccess={() => {
+              setMostrarFormularioPresentacion(false);
+              handleBuscarPorDenominacion("PRESENTACION")
+            }}
+          />
+        )}
       </Card>
     </div>
   );

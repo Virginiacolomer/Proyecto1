@@ -27,10 +27,8 @@ export class CreateProductoDto {
   denominacion?: string;
 
   @IsOptional()
-  @IsString({ message: 'La presentación debe ser una cadena de texto.' })
-  @MaxLength(50, { message: 'La presentación no puede exceder los 50 caracteres.' })
-  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
-  presentacion?: string;
+  @IsInt({ message: 'La presentación debe ser un número entero.' })
+  presentacionId?: number;
 
   @IsOptional()
   @IsString()
