@@ -33,7 +33,6 @@ export default function CambioPreciosMasivo() {
     loading,
     simular,
     aplicar,
-    quitarProductoDeLaPrevisualizacion,
     limpiar,
   } = useCambioPrecios(usuarioId);
 
@@ -221,11 +220,13 @@ export default function CambioPreciosMasivo() {
                   : "Elegí una marca o línea (opcional), un tipo de ajuste y simulá para ver la previsualización."}
               </p>
             ) : (
-              <TablaCambioPrecios
-                productos={productos}
-                columns={columns}
-                onEliminar={quitarProductoDeLaPrevisualizacion}
-              />
+              <>
+                <p className="px-4 py-2 text-sm text-gray-600">
+                  El aumento se aplicará a los <strong>{productos.length}</strong> producto(s) listados.
+                  Para acotarlo, cambiá la marca o la línea y volvé a simular.
+                </p>
+                <TablaCambioPrecios productos={productos} columns={columns} />
+              </>
             )}
           </CardContent>
         </Card>
