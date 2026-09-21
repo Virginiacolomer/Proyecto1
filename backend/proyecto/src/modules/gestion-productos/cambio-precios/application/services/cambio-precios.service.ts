@@ -3,7 +3,7 @@ import { DataSource } from 'typeorm';
 import { randomUUID } from 'crypto';
 import { IProductoRepository } from '../../../producto/domain/interfaces/producto.repository-interface';
 import { Producto } from '../../../producto/domain/entities/producto.entity';
-import { HistorialPrecio } from '../../domain/entities/historial-precio.entity';
+import { HistorialPrecio } from '../../../producto/domain/entities/historial-precio.entity';
 import { SimularAumentoMasivoDto } from '../../dto/simular-aumento-masivo.dto';
 import { AplicarAumentoMasivoDto } from '../../dto/aplicar-aumento-masivo.dto';
 import {
@@ -93,7 +93,8 @@ export class CambioPreciosService {
       await queryRunner.manager.save(Producto, producto);
 
       const historial = queryRunner.manager.create(HistorialPrecio, {
-        productoId: producto.id,
+        producto,
+        fecha: new Date(),
         loteId,
         precioAnterior,
         precioNuevo,

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { HistorialPrecio } from './domain/entities/historial-precio.entity';
+import { HistorialPrecio } from '../producto/domain/entities/historial-precio.entity';
 import { CambioPreciosController } from './application/controllers/cambio-precios.controller';
 import { CambioPreciosService } from './application/services/cambio-precios.service';
 import { ProductoModule } from '../producto/producto.module';
