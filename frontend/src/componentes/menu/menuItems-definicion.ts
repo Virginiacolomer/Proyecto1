@@ -59,6 +59,13 @@ export const menuItems: MenuItem[] = [
         roles: [Rol.ADMINISTRADOR, Rol.VENDEDOR, Rol.REPARTIDOR, Rol.REPOSITOR,Rol.ROOT],
       },
       {
+        // CR-006: solo Administrador (igual que la ruta en App.tsx y el backend)
+        icon: DollarSign,
+        label: "Aumento masivo de precios",
+        path: "cambio-precios-masivo",
+        roles: [Rol.ADMINISTRADOR],
+      },
+      {
         icon: DollarSign,
         label: "Configuración",
         path: "",
