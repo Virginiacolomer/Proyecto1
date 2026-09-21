@@ -60,7 +60,7 @@ describe('Producto - Búsqueda Rápida (e2e)', () => {
         undefined,
         undefined,
         undefined,
-        0, // superLineaId
+        undefined, // superLineaId (no se envía: no filtra, igual que marcaId/lineaId)
         undefined,
         undefined,
         0, 
@@ -103,7 +103,7 @@ describe('Producto - Búsqueda Rápida (e2e)', () => {
         undefined,
         undefined,
         undefined,
-        0, // superLineaId
+        undefined, // superLineaId (no se envía: no filtra, igual que marcaId/lineaId)
         undefined,
         undefined,
         0, 
