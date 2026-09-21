@@ -31,15 +31,15 @@ export interface FormValues {
   cantidadPorPack?: number;
   utilizaStockMinimo?: boolean;
   utilizaPack?: boolean;
- /*  porcentajeOcasional: number;
-  precioOcasional: number;
-  porcentajeMayorista: number;
-  precioMayorista: number;
-  porcentajeCliente: number;
-  precioCliente: number;
-  precioOferta: number;*/
- // cantidadOferta?: number;
- // oferta?: boolean; 
+  /*  porcentajeOcasional: number;
+   precioOcasional: number;
+   porcentajeMayorista: number;
+   precioMayorista: number;
+   porcentajeCliente: number;
+   precioCliente: number;
+   precioOferta: number;*/
+  // cantidadOferta?: number;
+  // oferta?: boolean; 
 }
 
 export interface ItemsProveedorEnPayload {
@@ -64,13 +64,13 @@ export const schema = (utilizaStockMinimo: boolean, utilizaPack: boolean, usaOfe
     codigoReferencia: yup.string().optional().nullable(),
     codigoBarra: yup.string().optional().max(255, "Máximo 255 caracteres.").nullable(),
     stock: yup.number().optional().nullable(),
-    costo: yup.number().typeError("El costo debe ser un valor númerico").required("El costo es obligatorio").min(0,"El costo debe ser mayor o igual a 0"),
-    precio: yup.number().typeError("El precio debe ser un valor númerico").required("El precio es obligatorio").min(0,"El costo debe ser mayor o igual a 0").test("precio-mayor-o-igual-costo","El precio debe ser mayor o igual que el costo", function(value){
-      const {costo} = this.parent;
-      if (value==null || costo == null ) return true;
-      return value>= costo;
+    costo: yup.number().typeError("El costo debe ser un valor númerico").required("El costo es obligatorio").min(0, "El costo debe ser mayor o igual a 0"),
+    precio: yup.number().typeError("El precio debe ser un valor númerico").required("El precio es obligatorio").min(0, "El costo debe ser mayor o igual a 0").test("precio-mayor-o-igual-costo", "El precio debe ser mayor o igual que el costo", function (value) {
+      const { costo } = this.parent;
+      if (value == null || costo == null) return true;
+      return value >= costo;
     }),
-    porcentaje: yup.number().typeError("El porcentaje debe ser un valor númerico").min(0,"El porcentaje mínimo debe ser mayor o igual a 0").max(999, "El porcentaje máximo permitido es de 999").optional().nullable(),
+    porcentaje: yup.number().typeError("El porcentaje debe ser un valor númerico").min(0, "El porcentaje mínimo debe ser mayor o igual a 0").max(999, "El porcentaje máximo permitido es de 999").optional().nullable(),
     /* costoEnDolar: yup.boolean().optional().nullable(),
     costoDolar: yup.number().optional().nullable(),
     destacado: yup.boolean().optional().nullable(),
@@ -112,11 +112,11 @@ export const schema = (utilizaStockMinimo: boolean, utilizaPack: boolean, usaOfe
       then: (schema) => schema.required("La cantidad por pack es obligatoria.").moreThan(0, "La cantidad por pack debe ser mayor a 0."),
       otherwise: (schema) => schema.optional(),
     }),
-   /*  cantidadOferta: yup.number().when([], {
-      is: () => usaOferta,
-      then: (schema) => schema.required("La cantidad de oferta es obligatoria.").moreThan(0, "La cantidad de oferta debe ser mayor a 0."),
-      otherwise: (schema) => schema.optional(),
-    }), */
+    /*  cantidadOferta: yup.number().when([], {
+       is: () => usaOferta,
+       then: (schema) => schema.required("La cantidad de oferta es obligatoria.").moreThan(0, "La cantidad de oferta debe ser mayor a 0."),
+       otherwise: (schema) => schema.optional(),
+     }), */
     utilizaPack: yup.boolean().optional(),
     utilizaStockMinimo: yup.boolean().optional(),
     /* porcentajeOcasional: yup
@@ -166,32 +166,32 @@ export const transformData = (producto: Producto): FormValues => {
     costo: producto.costo ?? null,
     precio: producto.precio ?? null,
     porcentaje: producto.porcentaje ?? null,
-   // oferta: producto.oferta ?? null,
+    // oferta: producto.oferta ?? null,
     /* costoEnDolar: producto.costoEnDolar ?? null,
     costoDolar: producto.costoDolar ?? null,
     destacado: producto.destacado ?? null,
     
     envioGratis: producto.envioGratis ?? null, */
     alicuotaIva: producto.alicuotaIva ?? null,
-   // ubicacion: producto.ubicacion ?? null,
+    // ubicacion: producto.ubicacion ?? null,
     marcaId: producto.marca.id ?? 0,
     lineaId: producto.linea.id ?? 0,
-   /*  subLineaId: producto.sublinea?.id ?? 0,
-    presentacionId: producto.presentacion.id ?? 0,
- */
+    /*  subLineaId: producto.sublinea?.id ?? 0,
+     presentacionId: producto.presentacion.id ?? 0,
+  */
     stockMinimo: producto.stockMinimo ?? null,
     cantidadPorPack: producto.cantidadPorPack ?? null,
     utilizaStockMinimo: producto.utilizaStockMinimo,
     utilizaPack: producto.utilizaPack,
- //   cantidadOferta: producto.cantidadOferta ?? 0,
-   /*  porcentajeOcasional: producto.porcentajeOcasional ?? 0,
-    porcentajeMayorista: producto.porcentajeMayorista ?? 0,
-    porcentajeCliente: producto.porcentajeCliente ?? 0,
-    precioOcasional: producto.precioOcasional ?? 0,
-    precioMayorista: producto.precioMayorista ?? 0,
-    precioCliente: producto.precioCliente ?? 0,
-    precioOferta: producto.precioOferta ?? 0,
-     */
+    //   cantidadOferta: producto.cantidadOferta ?? 0,
+    /*  porcentajeOcasional: producto.porcentajeOcasional ?? 0,
+     porcentajeMayorista: producto.porcentajeMayorista ?? 0,
+     porcentajeCliente: producto.porcentajeCliente ?? 0,
+     precioOcasional: producto.precioOcasional ?? 0,
+     precioMayorista: producto.precioMayorista ?? 0,
+     precioCliente: producto.precioCliente ?? 0,
+     precioOferta: producto.precioOferta ?? 0,
+      */
   };
 };
 

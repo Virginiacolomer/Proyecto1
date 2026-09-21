@@ -56,8 +56,8 @@ export default function RegistrarActualizarProductoForm({
     defaultValues: producto
       ? transformData(producto)
       : {
-          alicuotaIva: AlicuotaIva.ALICUOTA_21,
-        },
+        alicuotaIva: AlicuotaIva.ALICUOTA_21,
+      },
   });
 
   const {
@@ -76,7 +76,7 @@ export default function RegistrarActualizarProductoForm({
 
   const [marcas, setMarcas] = React.useState<SelectMarca[]>([]);
   const [lineas, setLineas] = React.useState<SelectLinea[]>([]);
-  
+
   const [denominacionMarca, setDenominacionMarca] = useState(" ");
   const [denominacionLinea, setDenominacionLinea] = useState(" ");
   const [selectedLinea, setSelectedLinea] = React.useState<SelectLinea>();
@@ -84,13 +84,14 @@ export default function RegistrarActualizarProductoForm({
   const [mostrarFormularioLinea, setMostrarFormularioLinea] = useState(false);
   const [mostrarFormularioMarca, setMostrarFormularioMarca] = useState(false);
   const [itemProdAlternativoSinAgregar, setItemProdAlternativoSinAgregar] = useState(false);
+  const [esDenominacionManual, setEsDenominacionManual] = useState<boolean>(!!producto);
 
   const stock = watch(`stock`);
   const stockMinimo = watch("stockMinimo");
   const cantidadPorPack = watch("cantidadPorPack");
   const utilizaStockMinimo = watch("utilizaStockMinimo");
   const utilizaPack = watch("utilizaPack");
-  
+
 
   //=============================== CONSTANTES PARA MOVIMIENTO ENTRE CAMPOS ==================================
   const denominacionProductoRef = useRef<HTMLInputElement>(null);
@@ -119,7 +120,7 @@ export default function RegistrarActualizarProductoForm({
     if (!utilizaPack) {
       setValue("cantidadPorPack", 0);
     }
-    
+
   }, [utilizaStockMinimo, utilizaPack, false, setValue]);
 
   useEffect(() => {
@@ -143,14 +144,14 @@ export default function RegistrarActualizarProductoForm({
           setValue("marcaId", producto.marca.id || 0);
           setSelectedMarca(producto.marca);
 
-          
+
           setValue("denominacion", producto.denominacion || "");
           setValue("observacion", producto.observacion || null);
           setValue("codigoProveedor", producto.codigoProveedor || "");
           setValue("codigoBarra", producto.codigoBarra || null);
           setValue("stock", producto.stock || 0);
           setValue("costo", producto.costo || 0);
-          
+
           //setValue("oferta", producto.oferta || false);
           setValue("alicuotaIva", producto.alicuotaIva || 0);
 
@@ -158,9 +159,9 @@ export default function RegistrarActualizarProductoForm({
           setValue("utilizaStockMinimo", producto.utilizaStockMinimo || false);
           setValue("cantidadPorPack", producto.cantidadPorPack || 0);
           setValue("utilizaPack", producto.utilizaPack || false);
-        
+
           console.error("llega aca", producto);
-        
+
         }
       } catch (error) {
         console.error("Error al obtener los datos:", error);
@@ -237,7 +238,7 @@ export default function RegistrarActualizarProductoForm({
           console.log("No se encontró una marca con la denominación ingresada.");
         }
       }
-      
+
     } catch (error) {
       console.error("Error al buscar por código:", error);
     }
@@ -296,11 +297,11 @@ export default function RegistrarActualizarProductoForm({
           subtitle={
             producto
               ? "Sólo puede visualizarse, no modificarse."
-            : "Ingresa los datos."
+              : "Ingresa los datos."
           }
           icon={<Layers className="form-icon" />}
           onClose={onClose}
-        />  
+        />
 
         {/* Formulario */}
         <FormProvider {...methods}>
@@ -318,10 +319,11 @@ export default function RegistrarActualizarProductoForm({
                         disabled={producto && producto.sistema > 0 ? true : false}
                         onKeyDown={enterToObservacion}
                         inputRef={denominacionProductoRef}
+                        onChange={() => setEsDenominacionManual(true)}
                       />
                     </div>
 
-                    
+
                   </div>
 
                   <FormInput
@@ -387,7 +389,7 @@ export default function RegistrarActualizarProductoForm({
                     disabled={producto && producto.sistema > 0 ? true : false}
                   />
 
-                  
+
 
 
                   <FormInput
@@ -481,7 +483,7 @@ export default function RegistrarActualizarProductoForm({
                     />
                   </div>
 
-                  
+
 
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-1 min-w-[140px]">
                     <div className="col-span-full flex flex-wrap gap-4 mt-8">
@@ -508,41 +510,53 @@ export default function RegistrarActualizarProductoForm({
 
               <div className="flex flex-col w-full gap-2">
 
-              <LineasSelector
-                denominacionLinea={denominacionLinea}
-                setDenominacionLinea={setDenominacionLinea}
-                denominacionLineaRef={denominacionLineaRef}
-                selectLineaRef={selectLineaRef}
-                lineas={lineas}
-                selectedLinea={selectedLinea}
-                lineaId={watch("lineaId")}
-                disabled={producto && producto.sistema > 0}
-                errors={errors}
-                onEnterLinea={(e) => handleEnterEnSelect(e, "LINEA")}
-                onEnterDenominacion={enterToDenominacionMarca}
-                onLineaChange={(linea) => {
-                  methods.setValue("lineaId", linea?.id || 0);
-                  setLineaSeleccionada(linea as any);
-                }}
-                onAgregarLinea={() => setMostrarFormularioLinea(true)}
-              />
+                <LineasSelector
+                  denominacionLinea={denominacionLinea}
+                  setDenominacionLinea={setDenominacionLinea}
+                  denominacionLineaRef={denominacionLineaRef}
+                  selectLineaRef={selectLineaRef}
+                  lineas={lineas}
+                  selectedLinea={selectedLinea}
+                  lineaId={watch("lineaId")}
+                  disabled={producto && producto.sistema > 0}
+                  errors={errors}
+                  onEnterLinea={(e) => handleEnterEnSelect(e, "LINEA")}
+                  onEnterDenominacion={enterToDenominacionMarca}
+                  onLineaChange={(linea) => {
+                    methods.setValue("lineaId", linea?.id || 0);
+                    setLineaSeleccionada(linea as any);
+                    setSelectedLinea(linea || undefined);
 
-              <MarcasSelector
-                denominacionMarca={denominacionMarca}
-                setDenominacionMarca={setDenominacionMarca}
-                denominacionMarcaRef={denominacionMarcaRef}
-                selectMarcaRef={selectMarcaRef}
-                marcas={marcas}
-                selectedMarca={selectedMarca}
-                marcaId={watch("marcaId")}
-                disabled={producto && producto.sistema > 0}
-                error={errors.marcaId?.message}
-                onEnterMarca={(e) => handleEnterEnSelect(e, "MARCA")}
-                onChangeMarca={(marca) => {
-                  methods.setValue("marcaId", marca?.id || 0);
-                }}
-                onAgregarMarca={() => setMostrarFormularioMarca(true)}
-              />
+                    if (!esDenominacionManual) {
+                      const partes = [selectedMarca?.denominacion, linea?.denominacion].filter(Boolean);
+                      methods.setValue("denominacion", partes.join(" "), { shouldValidate: true });
+                    }
+                  }}
+                  onAgregarLinea={() => setMostrarFormularioLinea(true)}
+                />
+
+                <MarcasSelector
+                  denominacionMarca={denominacionMarca}
+                  setDenominacionMarca={setDenominacionMarca}
+                  denominacionMarcaRef={denominacionMarcaRef}
+                  selectMarcaRef={selectMarcaRef}
+                  marcas={marcas}
+                  selectedMarca={selectedMarca}
+                  marcaId={watch("marcaId")}
+                  disabled={producto && producto.sistema > 0}
+                  error={errors.marcaId?.message}
+                  onEnterMarca={(e) => handleEnterEnSelect(e, "MARCA")}
+                  onChangeMarca={(marca) => {
+                    methods.setValue("marcaId", marca?.id || 0);
+                    setSelectedMarca(marca || undefined);
+
+                    if (!esDenominacionManual) {
+                      const partes = [marca?.denominacion, selectedLinea?.denominacion].filter(Boolean);
+                      methods.setValue("denominacion", partes.join(" "), { shouldValidate: true });
+                    }
+                  }}
+                  onAgregarMarca={() => setMostrarFormularioMarca(true)}
+                />
 
               </div>
 
@@ -551,8 +565,8 @@ export default function RegistrarActualizarProductoForm({
 
               <hr className="col-span-full my-2 border-gray-300" />
 
-              
-              
+
+
             </CardContent>
 
             {errors.root?.message && <div className="text-red-600 text-center mb-4">{String(errors.root.message)}</div>}
@@ -565,8 +579,8 @@ export default function RegistrarActualizarProductoForm({
                     ? "Actualizando..."
                     : "Registrando..."
                   : producto
-                  ? "Actualizar"
-                  : "Registrar"}
+                    ? "Actualizar"
+                    : "Registrar"}
               </Button>
             </CardFooter>
           </form>
@@ -593,7 +607,7 @@ export default function RegistrarActualizarProductoForm({
           />
         )}
 
-       
+
       </Card>
     </div>
   );
