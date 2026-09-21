@@ -32,6 +32,7 @@ describe('CambioPrecios (e2e) - CR-006', () => {
   let usuarioId: number;
 
   let marcaId: number;
+  let superLineaId: number;
   let lineaGaseosasId: number;
   let lineaOtraId: number;
   let productoCocaColaId: number;
@@ -76,6 +77,7 @@ describe('CambioPrecios (e2e) - CR-006', () => {
 
     // --- Fixtures: marca, dos líneas y tres productos ---
     await crearMarca();
+    await crearSuperLinea();
     lineaGaseosasId = await crearLinea(`Gaseosas E2E ${sufijo}`);
     lineaOtraId = await crearLinea(`Otra Linea E2E ${sufijo}`);
 
@@ -94,6 +96,8 @@ describe('CambioPrecios (e2e) - CR-006', () => {
       eliminarLinea(lineaOtraId),
       eliminarMarca(marcaId),
     ]);
+    // La superlínea se borra después: no se puede dar de baja con líneas activas.
+    await Promise.allSettled([eliminarSuperLinea(superLineaId)]);
     await app.close();
   });
 
@@ -117,11 +121,29 @@ describe('CambioPrecios (e2e) - CR-006', () => {
     if (!marcaId) throw new Error('No se pudo obtener el id de la marca de prueba.');
   }
 
+  // Desde CR-003 toda línea pertenece a una superlínea.
+  async function crearSuperLinea(): Promise<void> {
+    const denominacion = `SuperLinea E2E ${sufijo}`;
+    await request(server)
+      .post('/api/superlinea')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ denominacion, usuarioCreatedId: usuarioId })
+      .expect(201);
+
+    const res = await request(server)
+      .get('/api/superlinea/search-by')
+      .set('Authorization', `Bearer ${token}`)
+      .query({ denominacion });
+
+    superLineaId = res.body.data.find((s: any) => s.denominacion.includes(`${sufijo}`))?.id;
+    if (!superLineaId) throw new Error('No se pudo obtener el id de la superlínea de prueba.');
+  }
+
   async function crearLinea(denominacion: string): Promise<number> {
     await request(server)
       .post('/api/linea')
       .set('Authorization', `Bearer ${token}`)
-      .send({ denominacion, utilizaStockMinimo: false, usuarioCreatedId: usuarioId })
+      .send({ denominacion, utilizaStockMinimo: false, superLineaId, usuarioCreatedId: usuarioId })
       .expect(201);
 
     const res = await request(server)
@@ -149,7 +171,10 @@ describe('CambioPrecios (e2e) - CR-006', () => {
         alicuotaIva: 21,
         utilizaStockMinimo: false,
         utilizaPack: false,
-        precio,
+        // HU-008: el precio no se manda, se calcula como costo + margen.
+        // Con margen 0 el precio es igual al costo.
+        costo: precio,
+        porcentaje: 0,
         usuarioCreatedId: usuarioId,
       })
       .expect(201);
@@ -191,6 +216,14 @@ describe('CambioPrecios (e2e) - CR-006', () => {
     if (!id) return;
     await request(server)
       .delete(`/api/linea/${id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .query({ usuarioId });
+  }
+
+  async function eliminarSuperLinea(id: number) {
+    if (!id) return;
+    await request(server)
+      .delete(`/api/superlinea/${id}`)
       .set('Authorization', `Bearer ${token}`)
       .query({ usuarioId });
   }
@@ -274,5 +307,49 @@ describe('CambioPrecios (e2e) - CR-006', () => {
 
     // El producto de la otra línea no se tocó.
     expect(await obtenerPrecio(productoOtraLineaId)).toBe(1000);
+  });
+  // Como el precio se deriva de costo + margen (HU-008), el aumento masivo
+  // se guarda como un costo nuevo y el margen no cambia.
+  it('el aumento quedó en el costo del producto y el margen no cambió', async () => {
+    const res = await request(server)
+      .get(`/api/producto/${productoCocaColaId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(res.body.costo).toBe(1100);
+    expect(res.body.porcentaje).toBe(0);
+    expect(res.body.precio).toBe(1100);
+  });
+
+  // Integración con HU-007: el aumento masivo usa el mismo historial de
+  // precios que el resto del sistema.
+  it('el aumento aparece en el historial de precios del producto (HU-007)', async () => {
+    const res = await request(server)
+      .get(`/api/producto/${productoCocaColaId}/historial-precios`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(res.body).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          precioAnterior: 1000,
+          precioNuevo: 1100,
+          motivo: 'Aumento e2e de la línea Gaseosas',
+        }),
+      ]),
+    );
+  });
+
+  // Regresión del problema original: editar el producto sin tocar
+  // costo/margen recalcula el precio desde el costo, y como el aumento ya
+  // está en el costo, el precio NO vuelve al valor anterior.
+  it('editar otro dato del producto después del aumento no borra el aumento', async () => {
+    await request(server)
+      .put(`/api/producto/${productoCocaColaId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ observacion: 'editado en e2e', usuarioUpdatedId: usuarioId })
+      .expect(200);
+
+    expect(await obtenerPrecio(productoCocaColaId)).toBe(1100);
   });
 });
