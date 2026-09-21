@@ -1,10 +1,11 @@
-import { Package, PlusCircle, Search } from "lucide-react";
+import { DollarSign, Package, PlusCircle, Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "../../../ui/Button";
 import { CardHeader, CardTitle } from "../../../ui/Card";
 import { Input } from "../../../ui/Input";
 import { EstadisticasSimples } from "../../../herramientas/reutilizables/estadisticas-simples";
 import { ImpresionForm } from "../../../herramientas/reutilizables/impresion-form";
-import { puedeAgregarProducto } from "../domain/permisos-producto";
+import { puedeActualizarPreciosMasivo, puedeAgregarProducto } from "../domain/permisos-producto";
 
 interface Props {
   codigo: string;
@@ -35,6 +36,8 @@ export function ProductosHeaderLg({
   onImprimirTodo,
   onImprimirPagina,
 }: Props) {
+  const navigate = useNavigate();
+
   return (
     <CardHeader className="flex flex-col md:flex-row gap-4 p-4">
       <div className="flex flex-col md:flex-row flex-wrap gap-4 w-full">
@@ -70,8 +73,20 @@ export function ProductosHeaderLg({
         </div>
 
       </div>
-      {puedeAgregarProducto(roles) && (<Button className="bg-blue-500 hover:bg-blue-600 text-white flex items-center gap-1.5 px-3 py-2 rounded-lg shadow-sm"
-        onClick={onNuevo}><PlusCircle className="h-4 w-4" /></Button>)}
+      <div className="flex items-center gap-2">
+        {puedeActualizarPreciosMasivo(roles) && (
+          <Button
+            onClick={() => navigate("/admin/cambio-precios-masivo")}
+            className="bg-green-600 hover:bg-green-700 text-white"
+            title="Aumentar precios por porcentaje o monto fijo"
+          >
+            <DollarSign className="mr-2 h-4 w-4" />
+            Actualización masiva de precios
+          </Button>
+        )}
+        {puedeAgregarProducto(roles) && (<Button className="bg-blue-500 hover:bg-blue-600 text-white flex items-center gap-1.5 px-3 py-2 rounded-lg shadow-sm"
+          onClick={onNuevo}><PlusCircle className="h-4 w-4" /></Button>)}
+      </div>
       
       {/* Botón de agregar e impresion por el momento no lo mostramos en el celu */}
       {/* <div className="flex items-center justify-between gap-3">
