@@ -556,6 +556,24 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
   }
 
 
+  async findActivosPorLineaOMarca(
+    lineaId?: number,
+    marcaId?: number,
+  ): Promise<Producto[]> {
+    const query = this.repository
+      .createQueryBuilder('producto')
+      .where('producto.deletedAt IS NULL');
+
+    if (lineaId) {
+      query.andWhere('producto.linea_id = :lineaId', { lineaId });
+    }
+    if (marcaId) {
+      query.andWhere('producto.marca_id = :marcaId', { marcaId });
+    }
+
+    return query.orderBy('producto.denominacion', 'ASC').getMany();
+  }
+
   async existsByCodigoProveedor(codigoProveedor: string, excludeId: number): Promise<boolean> {
     try {
       const queryBuilder = this.repository

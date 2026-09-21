@@ -8,6 +8,7 @@ import {
   Index,
   JoinColumn,
 } from 'typeorm';
+import { BadRequestException } from '@nestjs/common';
 import { ProductoInvalidoException } from '../exceptions/producto-invalido.exception';
 import { redondear5 } from 'src/modules/common/utils/number/redondeo';
 import { Linea } from '../../../linea/domain/entities/linea.entity';
@@ -21,6 +22,7 @@ import { MonetarioColumn } from 'src/modules/common/decorators/monetario-column.
 import { CantidadColumn } from 'src/modules/common/decorators/cantidad-column.decorator';
 import { PorcentajeColumn } from 'src/modules/common/decorators/porcentaje-column.decorator';
 import { Proveedor } from 'src/modules/organizacion/proveedor/domain/entities/proveedor.entity';
+import { TipoAjustePrecio } from '../../../cambio-precios/domain/enums/tipo-ajuste-precio.enum';
 import { OneToMany } from 'typeorm';
 import { HistorialPrecio } from './historial-precio.entity';
 
@@ -235,5 +237,66 @@ export class Producto {
     // El precio de venta siempre se deriva de costo + margen.
     // Nunca se acepta un valor de precio cargado externamente.
     this.precio = redondear5(costo + costo * (margen / 100));
+  }
+
+  /**
+   * Calcula cómo quedaría el producto si se aplicara un aumento por
+   * porcentaje o por monto fijo, SIN modificarlo todavía.
+   *
+   * Como el precio siempre se deriva de costo + margen (ver
+   * establecerCostoMargenYStock), un aumento de precio se traduce en un
+   * COSTO nuevo: el margen se mantiene y el costo se despeja para que el
+   * precio resultante sea el buscado. Si el costo actual es 0, el aumento
+   * de monto fijo igual da un costo distinto de cero (parte del precio 0).
+   *
+   * Decisión de diseño #2 (HU CR-006): el cálculo vive en la entidad,
+   * no en el service que orquesta el aumento masivo.
+   */
+  calcularAumento(
+    tipoAjuste: TipoAjustePrecio,
+    valor: number,
+  ): { costoNuevo: number; precioNuevo: number } {
+    const precioActual = this.precio ?? 0;
+    const margen = this.porcentaje ?? 0;
+
+    const precioObjetivo =
+      tipoAjuste === TipoAjustePrecio.PORCENTAJE
+        ? precioActual + precioActual * (valor / 100)
+        : precioActual + valor;
+
+    const costoNuevo = redondear5(precioObjetivo / (1 + margen / 100));
+    // Mismo cálculo que establecerCostoMargenYStock, para que lo que se
+    // muestra en la previsualización sea exactamente lo que se guarda.
+    const precioNuevo = redondear5(costoNuevo + costoNuevo * (margen / 100));
+
+    if (precioNuevo <= 0) {
+      throw new BadRequestException(
+        `El ajuste dejaría el precio de "${this.denominacion}" en $${precioNuevo}; no puede ser cero ni negativo.`,
+      );
+    }
+
+    return { costoNuevo, precioNuevo };
+  }
+
+  /** Precio que tendría el producto tras el aumento (para la previsualización). */
+  simularAumento(tipoAjuste: TipoAjustePrecio, valor: number): number {
+    return this.calcularAumento(tipoAjuste, valor).precioNuevo;
+  }
+
+  /**
+   * Aplica el aumento: actualiza el costo y deja que
+   * establecerCostoMargenYStock recalcule el precio (y valide). Devuelve el
+   * precio anterior para que quien orquesta el aumento masivo arme el
+   * registro de HistorialPrecio (motivo/usuario/lote no son datos del
+   * Producto).
+   */
+  confirmarAumento(tipoAjuste: TipoAjustePrecio, valor: number): number {
+    const precioAnterior = this.precio ?? 0;
+    const { costoNuevo } = this.calcularAumento(tipoAjuste, valor);
+
+    this.establecerCostoMargenYStock({ costo: costoNuevo });
+    this.fechaCosto = new Date();
+
+    return precioAnterior;
   }
 }

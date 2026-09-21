@@ -85,4 +85,14 @@ export interface IProductoRepository {
   existsProductosActivosByPresentacion(presentacionId: number): Promise<boolean>;
 
   findByIds(ids: number[]): Promise<Producto[]>;
+
+  /**
+   * Alcance para el aumento masivo de precios (Decisión de diseño #9 de la
+   * HU CR-006): reusa los mismos filtros de línea/marca que ya tiene la
+   * búsqueda de productos. Sin filtros, devuelve todos los productos activos.
+   */
+  findActivosPorLineaOMarca(
+    lineaId?: number,
+    marcaId?: number,
+  ): Promise<Producto[]>;
 }
