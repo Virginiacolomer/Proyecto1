@@ -6,6 +6,7 @@ import { UpdateProductoDto } from '../../dto/update-producto.dto';
 import { IUnitOfWork } from 'src/modules/common/unit-of-work/iunit-of-work.';
 import { Usuario } from 'src/modules/gestion-usuario/usuario/domain/entities/usuario.entity';
 import { UpdatePrecioDto } from '../../dto/update-precio.dto';
+import { HistorialPrecio } from '../entities/historial-precio.entity';
 
 export interface IProductoRepository {
 
@@ -59,6 +60,8 @@ export interface IProductoRepository {
     dto: UpdatePrecioDto,
     usuario: Usuario,
   ): Promise<void>;
+
+  getHistorialPrecios(productoId: number): Promise<HistorialPrecio[]>;
   remove(data: Producto, usuario: Usuario): Promise<Producto>;
 
   isCodigoProveedorDuplicado(

@@ -21,6 +21,8 @@ import { MonetarioColumn } from 'src/modules/common/decorators/monetario-column.
 import { CantidadColumn } from 'src/modules/common/decorators/cantidad-column.decorator';
 import { PorcentajeColumn } from 'src/modules/common/decorators/porcentaje-column.decorator';
 import { Proveedor } from 'src/modules/organizacion/proveedor/domain/entities/proveedor.entity';
+import { OneToMany } from 'typeorm';
+import { HistorialPrecio } from './historial-precio.entity';
 
 @Entity('producto')
 export class Producto {
@@ -177,6 +179,9 @@ export class Producto {
   @ManyToOne(() => Producto, (producto) => producto.productosOperacion)
   productosOperacion: ProductoOperacion;
 
+  // ========== HISTORIAL DE PRECIOS ==========
+  @OneToMany(() => HistorialPrecio, (historial) => historial.producto)
+  historialPrecios: HistorialPrecio[];
 
   @Column({ type: 'int', default: 0 })
   sistema: number;

@@ -3,6 +3,7 @@ import { ProductoController } from './application/controllers/producto.controlle
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NormalizeDenominacionPipe } from 'src/modules/common/pipes/normalize-denominations.pipe';
 import { Producto } from './domain/entities/producto.entity';
+import { HistorialPrecio } from './domain/entities/historial-precio.entity';
 import { ProductoRepository } from './infraestructure/repositories/producto.repository';
 import { LineaModule } from '../linea/linea.module';
 import { MarcaModule } from '../marca/marca.module';
@@ -23,7 +24,7 @@ import { ProductoDeletePolicy } from './application/policies/producto-delete.pol
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Producto]),
+    TypeOrmModule.forFeature([Producto, HistorialPrecio]),
     CommonModule,
     forwardRef(() => LineaModule),
     forwardRef(() => MarcaModule),
