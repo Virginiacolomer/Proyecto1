@@ -48,14 +48,13 @@ export default function RegistrarActualizarProductoForm({
 
   const { configuracion } = useConfiguracionSistema();
   const [rStockCritico, setStockCritico] = useState(false);
-  const [pack, setPack] = useState(false);
   const [usaOferta, setUsaOferta] = useState(false);
   const [lineaSeleccionada, setLineaSeleccionada] = useState<Linea>({} as Linea);
 
   console.log("Configuración del sistema:", configuracion);
 
   const methods = useForm<FormValues>({
-    resolver: yupResolver(schema(rStockCritico, pack, usaOferta)) as any,
+    resolver: yupResolver(schema(rStockCritico, false, usaOferta)) as any,
     defaultValues: producto
       ? transformData(producto)
       : {
@@ -94,9 +93,7 @@ export default function RegistrarActualizarProductoForm({
 
   const stock = watch(`stock`);
   const stockMinimo = watch("stockMinimo");
-  const cantidadPorPack = watch("cantidadPorPack");
   const utilizaStockMinimo = watch("utilizaStockMinimo");
-  const utilizaPack = watch("utilizaPack");
   const costo = watch("costo");
   const porcentaje = watch("porcentaje");
 
@@ -117,7 +114,6 @@ export default function RegistrarActualizarProductoForm({
   const observacionRef = useRef<HTMLInputElement>(null);
   const ubicacionRef = useRef<HTMLInputElement>(null);
   const selectTipoProductoRef = useRef<HTMLDivElement>(null);
-  const codigoBarraRef = useRef<HTMLInputElement>(null);
   const selectAlicuotaIvaRef = useRef<HTMLDivElement>(null);
   const precioOfertaRef = useRef<HTMLInputElement>(null);
   const denominacionLineaRef = useRef<HTMLInputElement>(null);
@@ -138,11 +134,8 @@ export default function RegistrarActualizarProductoForm({
     if (!utilizaStockMinimo) {
       setValue("stockMinimo", 0);
     }
-    if (!utilizaPack) {
-      setValue("cantidadPorPack", 0);
-    }
     
-  }, [utilizaStockMinimo, utilizaPack, false, setValue]);
+  }, [utilizaStockMinimo, false, setValue]);
 
   useEffect(() => {
     setValue("stockMinimo", lineaSeleccionada.stockMinimo || 0);
@@ -150,10 +143,9 @@ export default function RegistrarActualizarProductoForm({
   }, [lineaSeleccionada]);
 
   useEffect(() => {
-    setPack(utilizaPack || false);
     setStockCritico(utilizaStockMinimo || false);
     setUsaOferta(false);
-  }, [utilizaPack, utilizaStockMinimo, false]);
+  }, [utilizaStockMinimo, false]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -173,8 +165,7 @@ export default function RegistrarActualizarProductoForm({
           
           setValue("denominacion", producto.denominacion || "");
           setValue("observacion", producto.observacion || null);
-          setValue("codigoProveedor", producto.codigoProveedor || "");
-          setValue("codigoBarra", producto.codigoBarra || null);
+          setValue("codigoReferencia", producto.codigoReferencia || "");
           setValue("stock", producto.stock || 0);
           setValue("costo", producto.costo || 0);
           
@@ -183,8 +174,6 @@ export default function RegistrarActualizarProductoForm({
 
           setValue("stockMinimo", producto.stockMinimo || 0);
           setValue("utilizaStockMinimo", producto.utilizaStockMinimo || false);
-          setValue("cantidadPorPack", producto.cantidadPorPack || 0);
-          setValue("utilizaPack", producto.utilizaPack || false);
         
           console.error("llega aca", producto);
         
@@ -344,7 +333,7 @@ export default function RegistrarActualizarProductoForm({
           title={producto ? "Producto" : "Registrar Producto"}
           subtitle={
             producto
-              ? "Sólo puede visualizarse, no modificarse."
+              ? "Edita los datos."
             : "Ingresa los datos."
           }
           icon={<Layers className="form-icon" />}
@@ -358,8 +347,8 @@ export default function RegistrarActualizarProductoForm({
               {/* Primera fila */}
               <div className="flex flex-col w-full gap-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 col-span-full">
-                  <div className="col-span-full flex items-end gap-2">
-                    <div className="flex-1">
+                  <div className="col-span-full flex flex-col md:flex-row items-end gap-2">
+                    <div className="flex-[2]">
                       <FormInput
                         name="denominacion"
                         label="Denominación"
@@ -369,30 +358,14 @@ export default function RegistrarActualizarProductoForm({
                         inputRef={denominacionProductoRef}
                       />
                     </div>
-
-                    
+                    <div className="flex-1 w-full md:w-auto">
+                      <FormInput
+                        name="codigoReferencia"
+                        label="Codigo Referencia"
+                        placeholder="Ingresa el codigo de referencia"
+                      />
+                    </div>
                   </div>
-
-                  <FormInput
-                    name="codigoProveedor"
-                    label="Codigo Interno"
-                    placeholder="Ingresa el Codigo Interno"
-                    disabled={producto && producto.sistema > 0 ? true : false}
-                  />
-
-                  <FormInput
-                    name="codigoReferencia"
-                    label="Codigo Referencia"
-                    placeholder="Ingresa el codigo de referencia"
-                  />
-
-                  <FormInput
-                    name="codigoBarra"
-                    label="Código De Barra"
-                    placeholder="Ingresa el código de barra (opcional)"
-                    inputRef={codigoBarraRef}
-                    onKeyDown={(e) => handleEnterEnSelect(e, "ALICUOTA-IVA")}
-                  />
 
                   {/* <FormInput
                     name="costo"
@@ -533,29 +506,6 @@ export default function RegistrarActualizarProductoForm({
                       value={stockMinimo || 0}
                       onChange={(value) => setValue(`stockMinimo`, Number(value))}
                       disabled={utilizaStockMinimo ? false : true}
-                    />
-                  </div>
-
-                  
-
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-1 min-w-[140px]">
-                    <div className="col-span-full flex flex-wrap gap-4 mt-8">
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          {...methods.register("utilizaPack")}
-                          className={`w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500`}
-                          disabled={producto && producto.sistema > 0 ? true : false}
-                        />
-                      </label>
-                    </div>
-
-                    <CantidadesInput
-                      name={`cantidadPorPack`}
-                      label="Cantidad Pack"
-                      value={cantidadPorPack || 0}
-                      onChange={(value) => setValue(`cantidadPorPack`, Number(value))}
-                      disabled={utilizaPack ? false : true}
                     />
                   </div>
                 </div>

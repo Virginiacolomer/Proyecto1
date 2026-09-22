@@ -44,13 +44,6 @@ export class Producto {
   @Column({ type: 'int', nullable: true })
   presentacionId?: number;
 
-  @Index()
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  codigoProveedor?: string | null;
-
-  @Column({ type: 'text', nullable: true })
-  codigoBarra?: string | null;
-
   // ========== PROVEEDOR ==========
   @ManyToOne(() => Proveedor, (pro) => pro.proveedoresOperacion, {
     eager: true,
@@ -164,12 +157,6 @@ export class Producto {
   @Column({ type: 'int', nullable: true })
   marcaId?: number;
 
-
-  @Column({ default: false })
-  utilizaPack: boolean;
-
-  @Column({ type: 'int', nullable: true })
-  cantidadPorPack: number | null;
 
   @Column({ type: 'text', nullable: true })
   imagen?: string;

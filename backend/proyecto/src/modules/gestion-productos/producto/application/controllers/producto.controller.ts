@@ -111,8 +111,7 @@ export class ProductoController {
   async search(@Query() dto: SearchProductoPaginationWithDto) {
     const {
       denominacion = '',
-      codProveedorExacto,
-      codigoProveedor,
+
       codigoReferencia,
       marcaId,
       lineaId,
@@ -124,8 +123,7 @@ export class ProductoController {
     } = dto;
     return this.service.findBy(
       denominacion,
-      codigoProveedor,
-      codProveedorExacto,
+
       codigoReferencia,
       marcaId,
       lineaId,
