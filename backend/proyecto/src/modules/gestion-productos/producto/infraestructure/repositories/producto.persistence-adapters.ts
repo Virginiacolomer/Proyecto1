@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Transactional } from 'src/modules/common/decorators/transactional.decoratos';
 import { DatabaseConnectionException } from 'src/modules/common/exceptions/database-connection.exception';
@@ -14,6 +14,7 @@ import { CreateProductoDto } from '../../dto/create-producto.dto';
 import { UpdatePrecioDto } from '../../dto/update-precio.dto';
 import { UpdateProductoDto } from '../../dto/update-producto.dto';
 import { ProductoMapper } from '../../mappers/producto.mapper';
+import { HistorialPrecio } from '../../domain/entities/historial-precio.entity';
 
 
 @Injectable()
@@ -179,6 +180,8 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
 
       const { costo, porcentaje, stock, stockMinimo, ...dataSinItems } = data;
 
+      const precioAnterior = entity.precio ?? 0;
+
       // Reglas de negocio del dominio: valida y recalcula el precio ANTES de
       // tocar el resto de la entidad. Si falla, el producto conserva sus
       // valores anteriores y no se llega a guardar nada.
@@ -188,6 +191,8 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
         stock,
         stockMinimo,
       });
+
+      const precioNuevo = entity.precio ?? 0;
 
       Object.assign(entity, dataSinItems, {
         linea,
@@ -201,10 +206,35 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
 
       entity.usuarioUpdated = usuario;
 
+      if (Number(precioAnterior) !== Number(precioNuevo)) {
+        if (!data.motivo || data.motivo.trim() === '') {
+           throw new BadRequestException('El motivo es obligatorio al modificar costo o porcentaje y causar un cambio de precio.');
+        }
+        if (precioNuevo <= 0) {
+           throw new BadRequestException('El nuevo precio debe ser mayor a 0');
+        }
+      }
+
       try {
         const entityActualizada = await repo.save(entity);
+
+        if (Number(precioAnterior) !== Number(precioNuevo)) {
+          const historialRepo = this.uow.getRepository(HistorialPrecio);
+          const historial = historialRepo.create({
+            producto: entityActualizada,
+            precioAnterior: precioAnterior,
+            precioNuevo: precioNuevo,
+            motivo: (data.motivo || '').trim(),
+            fecha: new Date(),
+          });
+          await historialRepo.save(historial);
+        }
+
         return entityActualizada;
       } catch (error) {
+        if (error instanceof BadRequestException) {
+           throw error;
+        }
         throw new DatabaseConnectionException(error);
       }
     }
@@ -406,7 +436,17 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
     ProductoMapper.mapPrecios(entity, dto, usuario);
 
     await repo.save(entity);
+  }
 
+  async getHistorialPrecios(productoId: number): Promise<HistorialPrecio[]> {
+    // Verificar que el producto existe utilizando el mecanismo existente (lanza excepción si no existe)
+    await this.findOne(productoId);
+
+    const historialRepo = this.dataSource.getRepository(HistorialPrecio);
+    return await historialRepo.find({
+      where: { producto: { id: productoId } },
+      order: { fecha: 'DESC' },
+    });
   }
 
   async findByDenominacion(denominacion: string): Promise<Producto | null> {
@@ -522,6 +562,24 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
       .getMany();
   }
 
+
+  async findActivosPorLineaOMarca(
+    lineaId?: number,
+    marcaId?: number,
+  ): Promise<Producto[]> {
+    const query = this.repository
+      .createQueryBuilder('producto')
+      .where('producto.deletedAt IS NULL');
+
+    if (lineaId) {
+      query.andWhere('producto.linea_id = :lineaId', { lineaId });
+    }
+    if (marcaId) {
+      query.andWhere('producto.marca_id = :marcaId', { marcaId });
+    }
+
+    return query.orderBy('producto.denominacion', 'ASC').getMany();
+  }
 
   async existsByCodigoProveedor(codigoProveedor: string, excludeId: number): Promise<boolean> {
     try {

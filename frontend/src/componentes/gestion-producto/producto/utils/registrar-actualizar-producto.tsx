@@ -106,6 +106,10 @@ export default function RegistrarActualizarProductoForm({
     setValue("precio", precioCalculado, { shouldValidate: true });
   }, [costo, porcentaje, setValue]);
 
+  const precioActual = watch("precio") || 0;
+  const precioAnterior = producto?.precio || 0;
+  const haCambiadoPrecio = producto && Math.abs(Number(precioActual) - Number(precioAnterior)) > 0.01;
+
   //=============================== CONSTANTES PARA MOVIMIENTO ENTRE CAMPOS ==================================
   const denominacionProductoRef = useRef<HTMLInputElement>(null);
   useEnterFocus(denominacionProductoRef);
@@ -213,10 +217,12 @@ export default function RegistrarActualizarProductoForm({
       const { precio, ...datosParaBackend } = formData as any;
 
       if (producto) {
-        const payload = {
+        const payload: any = {
           ...datosParaBackend,
           usuarioUpdatedId: usuarioId,
         };
+
+        // No eliminamos precio ni costo aquí, se enviarán para la validación del backend.
 
         response = await ProductoService.actualizar(producto.id, payload);
       } else {
@@ -446,8 +452,13 @@ export default function RegistrarActualizarProductoForm({
                     disabled={producto && producto.sistema > 0 ? true : false}
                   />
 
-
-
+                  {haCambiadoPrecio && (
+                    <FormInput
+                      name="motivo"
+                      label="Motivo del cambio de precio (*)"
+                      placeholder="Indique el motivo"
+                    />
+                  )}
 
                   <FormInput
                     name="ubicacion"

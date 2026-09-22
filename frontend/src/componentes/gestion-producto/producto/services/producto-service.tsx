@@ -44,6 +44,30 @@ const ProductoService = {
     }
   },
 
+  actualizarPrecioIndividual: async (id: number, payload: any) => {
+    try {
+      const token = localStorage.getItem("Token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const { data } = await axios.put(`${apiUrl}/producto/${id}/precio`, payload, { headers });
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  obtenerHistorialPrecios: async (id: number) => {
+    try {
+      const token = localStorage.getItem("Token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const { data } = await axios.get(`${apiUrl}/producto/${id}/historial-precios`, { headers });
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   calcularPreciosConPorcentaje: async (
     productoId: number,
     baseImponible: number,

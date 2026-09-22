@@ -18,6 +18,7 @@ import { IProductoRepository } from '../../domain/interfaces/producto.repository
 import { CreateProductoDto } from '../../dto/create-producto.dto';
 import { GetProductoDto } from '../../dto/get-producto.dto';
 import { UpdateProductoDto } from '../../dto/update-producto.dto';
+
 import { ProductoMapper } from '../../mappers/producto.mapper';
 import { LineaService } from 'src/modules/gestion-productos/linea/application/services/linea.service';
 import { MarcaService } from 'src/modules/gestion-productos/marca/application/services/marca.service';
@@ -101,6 +102,14 @@ export class ProductoService {
       entity.denominacion,
       'editada',
     );
+  }
+
+
+
+  async getHistorialPrecios(id: number) {
+    this.logger.log(`Consultando historial de precios del ${this.ENTITY_NAME} con ID: ${id}`);
+    const historial = await this.repository.getHistorialPrecios(id);
+    return historial.map(record => ProductoMapper.toHistorialDto(record));
   }
 
   async findByRapido(

@@ -1,39 +1,41 @@
-import axiosConfig from "../../../../utils/axiosConfig";
-import axios from "axios";
-import { createCrudService } from "../../../../utils/crudFactory";
-import { FormValues } from "../../producto/interfaces-validaciones-producto";
+import ApiService from "../../../../utils/apiService";
+import {
+  ConsultarProductosCambioPreciosMasivo,
+  FiltroAlcanceCambioPrecios,
+  ResultadoAumentoMasivo,
+  TipoAjustePrecio,
+} from "../../../../interfaces/gestion-producto/producto/interfaces-producto";
 
-const apiUrl = axiosConfig.apiUrl;
+export interface AumentoMasivoPayload extends FiltroAlcanceCambioPrecios {
+  tipoAjuste: TipoAjustePrecio;
+  valor: number;
+}
 
-const baseService = createCrudService<FormValues>("cambio-precios");
+export interface AplicarAumentoMasivoPayload extends AumentoMasivoPayload {
+  motivo: string;
+  usuarioCreatedId: number;
+}
 
 const CambioPreciosMasivoService = {
-  ...baseService,
+  // Previsualiza el aumento (no persiste nada) — POST /cambio-precios/simular
+  simular: (
+    payload: AumentoMasivoPayload
+  ): Promise<ConsultarProductosCambioPreciosMasivo[]> =>
+    ApiService.post("/cambio-precios/simular", payload),
 
-  aplicarCambios: async (payload: any) => {
-    try {
-      const token = localStorage.getItem("Token");
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  // Recalcula en el backend y confirma el aumento — POST /cambio-precios/aplicar
+  aplicar: (
+    payload: AplicarAumentoMasivoPayload
+  ): Promise<ResultadoAumentoMasivo> =>
+    ApiService.post("/cambio-precios/aplicar", payload),
 
-      const { data } = await axios.patch(`${apiUrl}/cambio-precios/aplicar-cambios`, payload, { headers });
-      return data;
-      } catch (error) {
-      throw error;
-    }
-  },
+  // Las líneas y marcas para los filtros se buscan en el endpoint real de
+  // Producto (el de "cambio-precios" para esto nunca existió).
+  buscarMarcas: (denominacion: string) =>
+    ApiService.get("/producto/find-all-for-marcas/select", { denominacion }),
 
-  guardarCambios: async (payload: any) => {
-    try {
-      const token = localStorage.getItem("Token");
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
-      const { data } = await axios.patch(`${apiUrl}/cambio-precios/guardar-cambios`, payload, { headers });
-      return data;
-      } catch (error) {
-      throw error;
-    }
-  },
-  
+  buscarLineas: (denominacion: string) =>
+    ApiService.get("/producto/find-all-for-lineas/select", { denominacion }),
 };
 
 export default CambioPreciosMasivoService;
