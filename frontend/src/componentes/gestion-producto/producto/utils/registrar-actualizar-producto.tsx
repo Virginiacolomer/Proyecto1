@@ -18,7 +18,7 @@ import Select from "react-select";
 import { useEnterFocus } from "../../../herramientas/formateo-de-campos/movimiento-campos";
 import { useConfiguracionSistema } from "../../../sistema/ConfiguracionSistemaContext";
 import { parseApiError } from "../../../../utils/errores";
-import { Layers } from "lucide-react";
+import { Layers, Sparkles } from "lucide-react";
 import RegistrarActualizarMarcaForm from "../../marca/utils/registrar-actualizar-marca";
 import { ItemProveedor } from "../../../../interfaces/gestion-producto/producto/interfaces-item-proveedor";
 import { SelectSublinea } from "../../../../interfaces/gestion-producto/sublinea/interfaces-sublinea";
@@ -90,7 +90,6 @@ export default function RegistrarActualizarProductoForm({
   const [mostrarFormularioMarca, setMostrarFormularioMarca] = useState(false);
   const [mostrarFormularioPresentacion, setMostrarFormularioPresentacion] = useState(false);
   const [itemProdAlternativoSinAgregar, setItemProdAlternativoSinAgregar] = useState(false);
-  const [esDenominacionManual, setEsDenominacionManual] = useState<boolean>(!!producto);
 
   const stock = watch(`stock`);
   const stockMinimo = watch("stockMinimo");
@@ -326,6 +325,17 @@ export default function RegistrarActualizarProductoForm({
     }
   };
 
+  const handleGenerarDenominacionAutomatica = () => {
+    const partes = [
+      selectedMarca?.denominacion,
+      selectedLinea?.denominacion,
+      selectedPresentacion?.denominacion,
+    ].filter(Boolean);
+
+    const denominacionGenerada = partes.join(" ").replace(/\s+/g, " ").trim();
+    methods.setValue("denominacion", denominacionGenerada, { shouldValidate: true });
+  };
+
 
 
   return (
@@ -358,14 +368,19 @@ export default function RegistrarActualizarProductoForm({
                         disabled={producto && producto.sistema > 0 ? true : false}
                         onKeyDown={enterToObservacion}
                         inputRef={denominacionProductoRef}
-                        onChange={(e) => {
-                          const valor = e.target.value;
-                          setEsDenominacionManual(Boolean(valor && valor.trim().length > 0));
-                        }}
                       />
                     </div>
-
-
+                    <Button
+                      type="button"
+                      onClick={handleGenerarDenominacionAutomatica}
+                      disabled={producto && producto.sistema > 0 ? true : false}
+                      title="Denominación automática"
+                      variant="outline"
+                      size="icon"
+                      className="bg-blue-500 text-white hover:bg-gray-700 w-10 h-10 rounded-full shadow-md transition flex items-center justify-center shrink-0 mb-0.5"
+                    >
+                      <Sparkles size={20} />
+                    </Button>
                   </div>
 
                   <FormInput
@@ -568,11 +583,6 @@ export default function RegistrarActualizarProductoForm({
                     methods.setValue("lineaId", linea?.id || 0);
                     setLineaSeleccionada(linea as any);
                     setSelectedLinea(linea || undefined);
-
-                    if (!esDenominacionManual) {
-                      const partes = [selectedMarca?.denominacion, linea?.denominacion, selectedPresentacion?.denominacion].filter(Boolean);
-                      methods.setValue("denominacion", partes.join(" "), { shouldValidate: true });
-                    }
                   }}
                   onAgregarLinea={() => setMostrarFormularioLinea(true)}
                 />
@@ -591,11 +601,6 @@ export default function RegistrarActualizarProductoForm({
                   onChangeMarca={(marca) => {
                     methods.setValue("marcaId", marca?.id || 0);
                     setSelectedMarca(marca || undefined);
-
-                    if (!esDenominacionManual) {
-                      const partes = [marca?.denominacion, selectedLinea?.denominacion, selectedPresentacion?.denominacion].filter(Boolean);
-                      methods.setValue("denominacion", partes.join(" "), { shouldValidate: true });
-                    }
                   }}
                   onAgregarMarca={() => setMostrarFormularioMarca(true)}
                 />
@@ -614,11 +619,6 @@ export default function RegistrarActualizarProductoForm({
                   onChangePresentacion={(pres) => {
                     methods.setValue("presentacionId", pres?.id || 0);
                     setSelectedPresentacion(pres as any);
-
-                    if (!esDenominacionManual) {
-                      const partes = [selectedMarca?.denominacion, selectedLinea?.denominacion, pres?.denominacion].filter(Boolean);
-                      methods.setValue("denominacion", partes.join(" "), { shouldValidate: true });
-                    }
                   }}
                   onAgregarPresentacion={() => setMostrarFormularioPresentacion(true)}
                 />
