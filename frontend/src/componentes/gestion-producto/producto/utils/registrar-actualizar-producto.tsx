@@ -18,7 +18,7 @@ import Select from "react-select";
 import { useEnterFocus } from "../../../herramientas/formateo-de-campos/movimiento-campos";
 import { useConfiguracionSistema } from "../../../sistema/ConfiguracionSistemaContext";
 import { parseApiError } from "../../../../utils/errores";
-import { Layers } from "lucide-react";
+import { Layers, Sparkles } from "lucide-react";
 import RegistrarActualizarMarcaForm from "../../marca/utils/registrar-actualizar-marca";
 import { ItemProveedor } from "../../../../interfaces/gestion-producto/producto/interfaces-item-proveedor";
 import { SelectSublinea } from "../../../../interfaces/gestion-producto/sublinea/interfaces-sublinea";
@@ -59,8 +59,8 @@ export default function RegistrarActualizarProductoForm({
     defaultValues: producto
       ? transformData(producto)
       : {
-          alicuotaIva: AlicuotaIva.ALICUOTA_21,
-        },
+        alicuotaIva: AlicuotaIva.ALICUOTA_21,
+      },
   });
 
   const {
@@ -80,7 +80,6 @@ export default function RegistrarActualizarProductoForm({
   const [marcas, setMarcas] = React.useState<SelectMarca[]>([]);
   const [lineas, setLineas] = React.useState<SelectLinea[]>([]);
   const [presentaciones, setPresentaciones] = React.useState<SelectPresentacion[]>([]);
-  
   const [denominacionMarca, setDenominacionMarca] = useState(" ");
   const [denominacionLinea, setDenominacionLinea] = useState(" ");
   const [denominacionPresentacion, setDenominacionPresentacion] = useState(" ");
@@ -141,7 +140,7 @@ export default function RegistrarActualizarProductoForm({
     if (!utilizaPack) {
       setValue("cantidadPorPack", 0);
     }
-    
+
   }, [utilizaStockMinimo, utilizaPack, false, setValue]);
 
   useEffect(() => {
@@ -169,15 +168,13 @@ export default function RegistrarActualizarProductoForm({
             setValue("presentacionId", producto.presentacion.id || 0);
             setSelectedPresentacion(producto.presentacion);
           }
-
-          
           setValue("denominacion", producto.denominacion || "");
           setValue("observacion", producto.observacion || null);
           setValue("codigoProveedor", producto.codigoProveedor || "");
           setValue("codigoBarra", producto.codigoBarra || null);
           setValue("stock", producto.stock || 0);
           setValue("costo", producto.costo || 0);
-          
+
           //setValue("oferta", producto.oferta || false);
           setValue("alicuotaIva", producto.alicuotaIva || 0);
 
@@ -185,9 +182,9 @@ export default function RegistrarActualizarProductoForm({
           setValue("utilizaStockMinimo", producto.utilizaStockMinimo || false);
           setValue("cantidadPorPack", producto.cantidadPorPack || 0);
           setValue("utilizaPack", producto.utilizaPack || false);
-        
+
           console.error("llega aca", producto);
-        
+
         }
       } catch (error) {
         console.error("Error al obtener los datos:", error);
@@ -278,7 +275,6 @@ export default function RegistrarActualizarProductoForm({
           console.log("No se encontró una presentacion con la denominación ingresada.");
         }
       }
-      
     } catch (error) {
       console.error("Error al buscar por código:", error);
     }
@@ -335,6 +331,17 @@ export default function RegistrarActualizarProductoForm({
     }
   };
 
+  const handleGenerarDenominacionAutomatica = () => {
+    const partes = [
+      selectedMarca?.denominacion,
+      selectedLinea?.denominacion,
+      selectedPresentacion?.denominacion,
+    ].filter(Boolean);
+
+    const denominacionGenerada = partes.join(" ").replace(/\s+/g, " ").trim();
+    methods.setValue("denominacion", denominacionGenerada, { shouldValidate: true });
+  };
+
 
 
   return (
@@ -345,11 +352,11 @@ export default function RegistrarActualizarProductoForm({
           subtitle={
             producto
               ? "Sólo puede visualizarse, no modificarse."
-            : "Ingresa los datos."
+              : "Ingresa los datos."
           }
           icon={<Layers className="form-icon" />}
           onClose={onClose}
-        />  
+        />
 
         {/* Formulario */}
         <FormProvider {...methods}>
@@ -369,8 +376,17 @@ export default function RegistrarActualizarProductoForm({
                         inputRef={denominacionProductoRef}
                       />
                     </div>
-
-                    
+                    <Button
+                      type="button"
+                      onClick={handleGenerarDenominacionAutomatica}
+                      disabled={producto && producto.sistema > 0 ? true : false}
+                      title="Denominación automática"
+                      variant="outline"
+                      size="icon"
+                      className="bg-blue-500 text-white hover:bg-gray-700 w-10 h-10 rounded-full shadow-md transition flex items-center justify-center shrink-0 mb-0.5"
+                    >
+                      <Sparkles size={20} />
+                    </Button>
                   </div>
 
                   <FormInput
@@ -443,7 +459,6 @@ export default function RegistrarActualizarProductoForm({
                       placeholder="Indique el motivo"
                     />
                   )}
-
 
                   <FormInput
                     name="ubicacion"
@@ -536,7 +551,7 @@ export default function RegistrarActualizarProductoForm({
                     />
                   </div>
 
-                  
+
 
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-1 min-w-[140px]">
                     <div className="col-span-full flex flex-wrap gap-4 mt-8">
@@ -563,61 +578,61 @@ export default function RegistrarActualizarProductoForm({
 
               <div className="flex flex-col w-full gap-2">
 
-              <LineasSelector
-                denominacionLinea={denominacionLinea}
-                setDenominacionLinea={setDenominacionLinea}
-                denominacionLineaRef={denominacionLineaRef}
-                selectLineaRef={selectLineaRef}
-                lineas={lineas}
-                selectedLinea={selectedLinea}
-                lineaId={watch("lineaId")}
-                disabled={producto && producto.sistema > 0}
-                errors={errors}
-                onEnterLinea={(e) => handleEnterEnSelect(e, "LINEA")}
-                onEnterDenominacion={enterToDenominacionMarca}
-                onLineaChange={(linea) => {
-                  methods.setValue("lineaId", linea?.id || 0);
-                  setLineaSeleccionada(linea as any);
-                  setSelectedLinea(linea as any);
-                }}
-                onAgregarLinea={() => setMostrarFormularioLinea(true)}
-              />
+                <LineasSelector
+                  denominacionLinea={denominacionLinea}
+                  setDenominacionLinea={setDenominacionLinea}
+                  denominacionLineaRef={denominacionLineaRef}
+                  selectLineaRef={selectLineaRef}
+                  lineas={lineas}
+                  selectedLinea={selectedLinea}
+                  lineaId={watch("lineaId")}
+                  disabled={producto && producto.sistema > 0}
+                  errors={errors}
+                  onEnterLinea={(e) => handleEnterEnSelect(e, "LINEA")}
+                  onEnterDenominacion={enterToDenominacionMarca}
+                  onLineaChange={(linea) => {
+                    methods.setValue("lineaId", linea?.id || 0);
+                    setLineaSeleccionada(linea as any);
+                    setSelectedLinea(linea || undefined);
+                  }}
+                  onAgregarLinea={() => setMostrarFormularioLinea(true)}
+                />
 
-              <MarcasSelector
-                denominacionMarca={denominacionMarca}
-                setDenominacionMarca={setDenominacionMarca}
-                denominacionMarcaRef={denominacionMarcaRef}
-                selectMarcaRef={selectMarcaRef}
-                marcas={marcas}
-                selectedMarca={selectedMarca}
-                marcaId={watch("marcaId")}
-                disabled={producto && producto.sistema > 0}
-                error={errors.marcaId?.message}
-                onEnterMarca={(e) => handleEnterEnSelect(e, "MARCA")}
-                onChangeMarca={(marca) => {
-                  methods.setValue("marcaId", marca?.id || 0);
-                  setSelectedMarca(marca as any);
-                }}
-                onAgregarMarca={() => setMostrarFormularioMarca(true)}
-              />
+                <MarcasSelector
+                  denominacionMarca={denominacionMarca}
+                  setDenominacionMarca={setDenominacionMarca}
+                  denominacionMarcaRef={denominacionMarcaRef}
+                  selectMarcaRef={selectMarcaRef}
+                  marcas={marcas}
+                  selectedMarca={selectedMarca}
+                  marcaId={watch("marcaId")}
+                  disabled={producto && producto.sistema > 0}
+                  error={errors.marcaId?.message}
+                  onEnterMarca={(e) => handleEnterEnSelect(e, "MARCA")}
+                  onChangeMarca={(marca) => {
+                    methods.setValue("marcaId", marca?.id || 0);
+                    setSelectedMarca(marca || undefined);
+                  }}
+                  onAgregarMarca={() => setMostrarFormularioMarca(true)}
+                />
 
-              <PresentacionesSelector
-                denominacionPresentacion={denominacionPresentacion}
-                setDenominacionPresentacion={setDenominacionPresentacion}
-                denominacionPresentacionRef={denominacionPresentacionRef}
-                selectPresentacionRef={selectPresentacionRef}
-                presentaciones={presentaciones}
-                selectedPresentacion={selectedPresentacion}
-                presentacionId={watch("presentacionId") as any}
-                disabled={producto && producto.sistema > 0}
-                error={errors.presentacionId?.message}
-                onEnterPresentacion={(e) => handleEnterEnSelect(e, "PRESENTACION")}
-                onChangePresentacion={(pres) => {
-                  methods.setValue("presentacionId", pres?.id || 0);
-                  setSelectedPresentacion(pres as any);
-                }}
-                onAgregarPresentacion={() => setMostrarFormularioPresentacion(true)}
-              />
+                <PresentacionesSelector
+                  denominacionPresentacion={denominacionPresentacion}
+                  setDenominacionPresentacion={setDenominacionPresentacion}
+                  denominacionPresentacionRef={denominacionPresentacionRef}
+                  selectPresentacionRef={selectPresentacionRef}
+                  presentaciones={presentaciones}
+                  selectedPresentacion={selectedPresentacion}
+                  presentacionId={watch("presentacionId") as any}
+                  disabled={producto && producto.sistema > 0}
+                  error={errors.presentacionId?.message}
+                  onEnterPresentacion={(e) => handleEnterEnSelect(e, "PRESENTACION")}
+                  onChangePresentacion={(pres) => {
+                    methods.setValue("presentacionId", pres?.id || 0);
+                    setSelectedPresentacion(pres as any);
+                  }}
+                  onAgregarPresentacion={() => setMostrarFormularioPresentacion(true)}
+                />
 
               </div>
 
@@ -626,8 +641,8 @@ export default function RegistrarActualizarProductoForm({
 
               <hr className="col-span-full my-2 border-gray-300" />
 
-              
-              
+
+
             </CardContent>
 
             {errors.root?.message && <div className="text-red-600 text-center mb-4">{String(errors.root.message)}</div>}
@@ -640,8 +655,8 @@ export default function RegistrarActualizarProductoForm({
                     ? "Actualizando..."
                     : "Registrando..."
                   : producto
-                  ? "Actualizar"
-                  : "Registrar"}
+                    ? "Actualizar"
+                    : "Registrar"}
               </Button>
             </CardFooter>
           </form>
@@ -677,8 +692,6 @@ export default function RegistrarActualizarProductoForm({
             }}
           />
         )}
-
-       
       </Card>
     </div>
   );
