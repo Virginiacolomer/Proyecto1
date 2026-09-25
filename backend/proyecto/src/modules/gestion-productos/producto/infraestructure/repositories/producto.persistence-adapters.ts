@@ -61,6 +61,9 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
         stockMinimo,
       });
 
+      // Regla de dominio (CR-005): valida y/o autogenera la denominación
+      nuevaEntity.asignarDenominacion(data.denominacion);
+
       try {
         const entityGuardada = await repo.save(nuevaEntity);
         this.logger.log(
@@ -196,6 +199,10 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
         marca,
         presentacion: dataSinItems.presentacionId ? ({ id: dataSinItems.presentacionId } as any) : null,
       });
+
+      if (data.denominacion !== undefined) {
+        entity.asignarDenominacion(data.denominacion);
+      }
 
       entity.usuarioUpdated = usuario;
 

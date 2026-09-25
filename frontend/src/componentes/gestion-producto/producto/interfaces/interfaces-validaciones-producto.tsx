@@ -61,11 +61,11 @@ export const schema = (utilizaStockMinimo: boolean, utilizaPack: boolean, usaOfe
     observacion: yup.string().optional().nullable(),
     codigoReferencia: yup.string().optional().max(255, "Máximo 255 caracteres.").nullable(),
     stock: yup.number().optional().nullable(),
-    costo: yup.number().typeError("El costo debe ser un valor númerico").required("El costo es obligatorio").min(0,"El costo debe ser mayor o igual a 0"),
-    precio: yup.number().typeError("El precio debe ser un valor númerico").required("El precio es obligatorio").min(0,"El costo debe ser mayor o igual a 0").test("precio-mayor-o-igual-costo","El precio debe ser mayor o igual que el costo", function(value){
-      const {costo} = this.parent;
-      if (value==null || costo == null ) return true;
-      return value>= costo;
+    costo: yup.number().typeError("El costo debe ser un valor númerico").required("El costo es obligatorio").min(0, "El costo debe ser mayor o igual a 0"),
+    precio: yup.number().typeError("El precio debe ser un valor númerico").required("El precio es obligatorio").min(0, "El costo debe ser mayor o igual a 0").test("precio-mayor-o-igual-costo", "El precio debe ser mayor o igual que el costo", function (value) {
+      const { costo } = this.parent;
+      if (value == null || costo == null) return true;
+      return value >= costo;
     }),
     porcentaje: yup.number().typeError("El porcentaje debe ser un valor númerico").min(0,"El porcentaje mínimo debe ser mayor o igual a 0").max(99999, "El porcentaje máximo permitido es de 99999").optional().nullable(),
     motivo: yup.string().optional(),
@@ -156,14 +156,14 @@ export const transformData = (producto: Producto): FormValues => {
     costo: producto.costo ?? null,
     precio: producto.precio ?? null,
     porcentaje: producto.porcentaje ?? null,
-   // oferta: producto.oferta ?? null,
+    // oferta: producto.oferta ?? null,
     /* costoEnDolar: producto.costoEnDolar ?? null,
     costoDolar: producto.costoDolar ?? null,
     destacado: producto.destacado ?? null,
     
     envioGratis: producto.envioGratis ?? null, */
     alicuotaIva: producto.alicuotaIva ?? null,
-   // ubicacion: producto.ubicacion ?? null,
+    // ubicacion: producto.ubicacion ?? null,
     marcaId: producto.marca.id ?? 0,
     lineaId: producto.linea.id ?? 0,
     /*  subLineaId: producto.sublinea?.id ?? 0, */

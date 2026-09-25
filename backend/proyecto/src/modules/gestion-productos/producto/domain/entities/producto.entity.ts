@@ -227,6 +227,62 @@ export class Producto {
   }
 
   /**
+   * Genera la denominación automática según la regla de negocio de CR-005:
+   * Fórmula: Marca + Línea + Presentación.
+   *
+   * Recorta extremos (trim), elimina espacios dobles/múltiples intermedios
+   * y valida que no supere 255 caracteres ni resulte vacía.
+   */
+  generarDenominacionAutomatica(presentacionParam?: string): string {
+    const nombreMarca = this.marca?.denominacion?.trim() || '';
+    const nombreLinea = this.linea?.denominacion?.trim() || '';
+    const textoPresentacion =
+      typeof this.presentacion === 'string'
+        ? this.presentacion
+        : (this.presentacion as any)?.denominacion;
+    const nombrePresentacion = (presentacionParam ?? textoPresentacion ?? '')?.trim() || '';
+
+    const partes = [nombreMarca, nombreLinea, nombrePresentacion].filter(Boolean);
+    const resultado = partes.join(' ').replace(/\s+/g, ' ').trim();
+
+    if (!resultado) {
+      throw new ProductoInvalidoException([
+        'No se puede generar la denominación automática sin al menos Marca, Línea o Presentación',
+      ]);
+    }
+
+    if (resultado.length > 255) {
+      throw new ProductoInvalidoException([
+        'La denominación automática excede los 255 caracteres permitidos',
+      ]);
+    }
+
+    return resultado;
+  }
+
+  /**
+   * Asigna la denominación del producto cumpliendo las reglas de negocio (CR-005):
+   * - Si se provee una denominación manual, la normaliza y valida su longitud máxima.
+   * - Si no se provee denominación (o viene vacía), autogenera el nombre mediante Marca + Línea + Presentación.
+   */
+  asignarDenominacion(denominacionManual?: string | null, presentacionParam?: string): void {
+    const limpia = denominacionManual?.replace(/\s+/g, ' ').trim();
+
+    if (limpia && limpia.length > 0) {
+      if (limpia.length > 255) {
+        throw new ProductoInvalidoException([
+          'La denominación no puede exceder los 255 caracteres',
+        ]);
+      }
+      this.denominacion = limpia;
+      return;
+    }
+
+    // Si viene vacía o nula, autogenera a partir de los datos base
+    this.denominacion = this.generarDenominacionAutomatica(presentacionParam);
+  }
+
+  /**
    * Calcula cómo quedaría el producto si se aplicara un aumento por
    * porcentaje o por monto fijo, SIN modificarlo todavía.
    *
@@ -287,3 +343,4 @@ export class Producto {
     return precioAnterior;
   }
 }
+

@@ -15,6 +15,7 @@ type FormInputProps = {
   classNameDisabled?: string;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   inputRef?: React.Ref<HTMLInputElement>;
   mask?: string;
 };
@@ -32,6 +33,7 @@ export default function FormInput({
   defaultValue,
   onKeyDown,
   onBlur,
+  onChange,
   inputRef,
 }: FormInputProps) {
   const {
@@ -42,9 +44,9 @@ export default function FormInput({
   // Hook de máscara (solo si se pasa mask)
   const maskRef = mask
     ? useMask({
-        mask,
-        replacement: { _: /\d/ }, // "_" representa un dígito
-      })
+      mask,
+      replacement: { _: /\d/ }, // "_" representa un dígito
+    })
     : null;
 
   return (
@@ -69,6 +71,10 @@ export default function FormInput({
               onBlur={(e) => {
                 field.onBlur();
                 onBlur?.(e);
+              }}
+              onChange={(e) => {
+                field.onChange(e);
+                onChange?.(e);
               }}
               ref={mask ? maskRef : inputRef}
               className={
