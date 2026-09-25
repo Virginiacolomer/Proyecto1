@@ -73,8 +73,6 @@ export class ProductoRepository implements IProductoRepository {
 
   async findBy(
     denominacion: string,
-    codigoProveedor: string,
-    codProveedorExacto: boolean,
     codigoReferencia: string,
     marca_id: number,
     linea_id: number,
@@ -86,8 +84,6 @@ export class ProductoRepository implements IProductoRepository {
   ): Promise<{ data: Producto[]; total: number }> {
     return this.persistenceService.findBy(
       denominacion,
-      codigoProveedor,
-      codProveedorExacto,
       codigoReferencia,
       marca_id,
       linea_id,
@@ -125,15 +121,6 @@ export class ProductoRepository implements IProductoRepository {
     return entity;
   }
 
-  async isCodigoProveedorDuplicado(
-    codigoProveedor: string | null,
-    id?: number,
-  ): Promise<boolean> {
-    return this.persistenceService.isCodigoProveedorDuplicado(
-      codigoProveedor,
-      id,
-    );
-  }
 
   async actualizarPrecio(id: number, dto: UpdatePrecioDto, usuario: Usuario) {
     return this.persistenceService.actualizarPrecio(id, dto, usuario);
@@ -189,9 +176,6 @@ export class ProductoRepository implements IProductoRepository {
     return this.persistenceService.existsByDenominacion(denominacion, excludeId); 
   }
 
-  async  existsByCodigoProveedor(codigoProveedor: string, excludeId: number): Promise<boolean> {
-   return this.persistenceService.existsByCodigoProveedor(codigoProveedor, excludeId);
-  }
 
   async findActivosPorLineaOMarca(
     lineaId?: number,

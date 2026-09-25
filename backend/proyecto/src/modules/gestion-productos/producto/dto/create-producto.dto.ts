@@ -34,15 +34,6 @@ export class CreateProductoDto {
   @IsString()
   observacion?: string;
 
-  // si no tiene poner vacio
-  @IsOptional()
-  @IsString()
-  codigoProveedor?: string;
-
-  @IsOptional()
-  @IsString()
-  codigoBarra?: string;
-
   @IsOptional()
   @IsString()
   codigoReferencia?: string;
@@ -80,13 +71,6 @@ export class CreateProductoDto {
   @IsOptional()
   @IsNumber()
   costo?: number;
-
-  @IsBoolean()
-  utilizaPack: boolean;
-
-  @IsOptional()
-  @IsInt()
-  cantidadPorPack?: number;
 
   @IsOptional()
   @IsNumber()

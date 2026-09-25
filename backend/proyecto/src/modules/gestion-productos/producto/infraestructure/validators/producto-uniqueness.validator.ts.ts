@@ -38,19 +38,5 @@ export class ProductoUniquenessValidator {
     }
   }
 
-  async  validarCodigoProveedorUnico(codigoProveedor: string, excludeId: number,) {
-    const existingProduct = await this.repository.existsByCodigoProveedor(
-      codigoProveedor,
-      excludeId,
-    );
 
-    if (existingProduct) {
-      this.logger.warn(
-        `Producto - codigo duplicado: "${codigoProveedor}"`,
-      );
-      throw new ConflictException(
-        `El codigo  "${codigoProveedor}" ya está en uso`,
-      );
-    }
-  }
 }

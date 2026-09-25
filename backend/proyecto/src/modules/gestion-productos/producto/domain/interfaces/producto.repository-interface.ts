@@ -23,8 +23,6 @@ export interface IProductoRepository {
 
   findBy(
     denominacion: string,
-    codigoProveedor: string,
-    codProveedorExacto: boolean,
     codigoReferencia: string,
     marca_id: number,
     linea_id: number,
@@ -64,10 +62,6 @@ export interface IProductoRepository {
   getHistorialPrecios(productoId: number): Promise<HistorialPrecio[]>;
   remove(data: Producto, usuario: Usuario): Promise<Producto>;
 
-  isCodigoProveedorDuplicado(
-    codigoProveedor: string | null,
-    id?: number,
-  ): Promise<boolean>;
 
   findByDenominacionCodigoProveedorFiltered(
     denominacion: string,
@@ -79,7 +73,7 @@ export interface IProductoRepository {
     denominacion: string,
     excludeId?: number,
   ): Promise<boolean>;
-  existsByCodigoProveedor(codigoProveedor: string, excludeId: number): Promise<boolean>;
+
   existsProductosActivosByMarca(marcaId: number): Promise<boolean>;
   existsProductosActivosByLinea(lineaId: number): Promise<boolean>;
   existsProductosActivosByPresentacion(presentacionId: number): Promise<boolean>;

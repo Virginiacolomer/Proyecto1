@@ -50,8 +50,6 @@ describe('ProductoService - Búsqueda Rápida', () => {
     await service.findBy(
       denominacion,
       '',
-      false,
-      '',
       0, // marca_id
       0, // linea_id
       0, // superLineaId
@@ -64,8 +62,6 @@ describe('ProductoService - Búsqueda Rápida', () => {
     // Verificamos que el servicio delega correctamente al repositorio sin mutar el estado
     expect(mockProductoRepository.findBy).toHaveBeenCalledWith(
       denominacion,
-      '',
-      false,
       '',
       0,
       0,
@@ -83,8 +79,6 @@ describe('ProductoService - Búsqueda Rápida', () => {
 
     const result = await service.findBy(
       'xyz123',
-      '',
-      false,
       '',
       0,
       0,

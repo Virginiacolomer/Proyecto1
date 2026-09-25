@@ -266,8 +266,6 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
 
   async findBy(
     denominacion: string,
-    codigoProveedor: string,
-    codProveedorExacto: boolean,
     codigoReferencia: string,
     marca_id: number,
     linea_id: number,
@@ -286,7 +284,7 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
       .leftJoinAndSelect('producto.presentacion', 'presentacion')
       .withDeleted()
 
-    if (denominacion || codigoProveedor || codigoReferencia) {
+    if (denominacion || codigoReferencia) {
       const condiciones: string[] = [];
       const parametros: any = {};
 
@@ -297,19 +295,6 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
         parametros.denominacion = `%${denominacion}%`;
       }
 
-      if (codigoProveedor) {
-        if (codProveedorExacto) {
-          condiciones.push(
-            `UPPER(producto.codigoProveedor) = UPPER(:codigoProveedor)`,
-          );
-          parametros.codigoProveedor = codigoProveedor;
-        } else {
-          condiciones.push(
-            `UPPER(producto.codigoProveedor) LIKE UPPER(:codigoProveedor)`,
-          );
-          parametros.codigoProveedor = `%${codigoProveedor}%`;
-        }
-      }
 
       if (codigoReferencia) {
         condiciones.push(
@@ -369,14 +354,13 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
       if (exacto) {
         // Exacto solo en los códigos
         query.andWhere(
-          '(producto.codigoProveedor = :codigo OR producto.codigoReferencia = :codigo)',
+          '(producto.codigoReferencia = :codigo)',
           { codigo },
         );
       } else {
         // Parcial en códigos Y denominación
         query.andWhere(
           `(
-        producto.codigoProveedor LIKE :codigo OR 
         producto.codigoReferencia LIKE :codigo OR 
         producto.denominacion LIKE :codigo
       )`,
@@ -393,35 +377,6 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
     this.logger.warn(`Resultados: ${data.length} encontrados`);
 
     return { data, total };
-  }
-
-  async isCodigoProveedorDuplicado(
-    codigoProveedor: string | null,
-    id?: number,
-  ): Promise<boolean> {
-    // Si el código es nulo, vacío o '0', no hace falta verificar duplicados
-    if (
-      !codigoProveedor ||
-      codigoProveedor.trim() === '' ||
-      codigoProveedor === '0'
-    ) {
-      return false;
-    }
-
-    const query = this.repository
-      .createQueryBuilder('producto')
-      .where('producto.codigoProveedor = :codigoProveedor', {
-        codigoProveedor,
-      });
-
-    // Si se está actualizando, excluimos el producto actual
-    if (id) {
-      query.andWhere('producto.id != :id', { id });
-    }
-
-    const existe = await query.getExists();
-
-    return existe; // true si existe otro con el mismo código
   }
 
   @Transactional()
@@ -581,28 +536,7 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
     return query.orderBy('producto.denominacion', 'ASC').getMany();
   }
 
-  async existsByCodigoProveedor(codigoProveedor: string, excludeId: number): Promise<boolean> {
-    try {
-      const queryBuilder = this.repository
-        .createQueryBuilder('producto')
-        .where('producto.codigoProveedor = :codigoProveedor', { codigoProveedor })
-        .andWhere('producto.deletedAt IS NULL');
 
-      if (excludeId) {
-        queryBuilder.andWhere('producto.id != :excludeId', { excludeId });
-      }
-
-      const count = await queryBuilder.getCount();
-      return count > 0;
-    } catch (error) {
-      this.logger.error(
-        `Error verificando existencia de denominación:}`,
-      );
-      throw new DatabaseConnectionException(
-        'Error al conectar con la base de datos.',
-      );
-    }
-  }
 
 }
 

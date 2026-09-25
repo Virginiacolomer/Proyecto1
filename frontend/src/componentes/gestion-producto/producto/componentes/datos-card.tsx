@@ -50,7 +50,7 @@ export function DatosCard({
         <div>
           <p className="text-xs text-gray-500">Código</p>
           <p className="text-sm text-gray-700 truncate">
-            {producto.codigoProveedor}
+            {producto.codigoReferencia}
           </p>
         </div>
         <div>
