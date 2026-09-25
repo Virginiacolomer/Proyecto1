@@ -51,7 +51,9 @@ import { CambioPreciosModule } from './modules/gestion-productos/cambio-precios/
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       // entities,
       synchronize: false,  
-      ssl: process.env.DB_SSL === 'true',
+      ssl: {
+        rejectUnauthorized: false,
+      },
     }),
 
     MarcaModule,
