@@ -10,13 +10,13 @@ import { ItemProdAlternativo } from "../../../../interfaces/gestion-producto/pro
 export interface FormValues {
   denominacion: string;
   observacion?: string | null;
-  codigoProveedor?: string | null;
   codigoReferencia?: string | null;
-  codigoBarra?: string | null;
   stock?: number | null;
   costo?: number | null;
   precio?: number | null;
   porcentaje?: number | null;
+  motivo?: string;
+  ubicacion?: string | null;
   /* costoEnDolar?: boolean | null;
   costoDolar?: number | null;
   destacado?: boolean | null;
@@ -25,18 +25,17 @@ export interface FormValues {
   marcaId: number;
   /* subLineaId?: number | null */
   alicuotaIva: number | null;
-  /* ubicacion?: string | null;
-  presentacionId: number; */
+  /* ubicacion?: string | null; */
+  presentacionId: number;
   stockMinimo?: number;
-  cantidadPorPack?: number;
   utilizaStockMinimo?: boolean;
-  utilizaPack?: boolean;
- /*  porcentajeOcasional: number;
+  /* porcentajeOcasional: number;
   precioOcasional: number;
   porcentajeMayorista: number;
   precioMayorista: number;
   porcentajeCliente: number;
   precioCliente: number;
+  porcentajeOferta: number;
   precioOferta: number;*/
  // cantidadOferta?: number;
  // oferta?: boolean; 
@@ -60,17 +59,16 @@ export const schema = (utilizaStockMinimo: boolean, utilizaPack: boolean, usaOfe
       .max(255, "Máximo 255 caracteres.")
       .matches(/^[A-Za-z0-9 %-_"'áéíóúÁÉÍÓÚñÑ./]+$/, "Solo se permiten letras, números y espacios."),
     observacion: yup.string().optional().nullable(),
-    codigoProveedor: yup.string().optional().nullable(),
-    codigoReferencia: yup.string().optional().nullable(),
-    codigoBarra: yup.string().optional().max(255, "Máximo 255 caracteres.").nullable(),
+    codigoReferencia: yup.string().optional().max(255, "Máximo 255 caracteres.").nullable(),
     stock: yup.number().optional().nullable(),
-    costo: yup.number().typeError("El costo debe ser un valor númerico").required("El costo es obligatorio").min(0,"El costo debe ser mayor o igual a 0"),
-    precio: yup.number().typeError("El precio debe ser un valor númerico").required("El precio es obligatorio").min(0,"El costo debe ser mayor o igual a 0").test("precio-mayor-o-igual-costo","El precio debe ser mayor o igual que el costo", function(value){
-      const {costo} = this.parent;
-      if (value==null || costo == null ) return true;
-      return value>= costo;
+    costo: yup.number().typeError("El costo debe ser un valor númerico").required("El costo es obligatorio").min(0, "El costo debe ser mayor o igual a 0"),
+    precio: yup.number().typeError("El precio debe ser un valor númerico").required("El precio es obligatorio").min(0, "El costo debe ser mayor o igual a 0").test("precio-mayor-o-igual-costo", "El precio debe ser mayor o igual que el costo", function (value) {
+      const { costo } = this.parent;
+      if (value == null || costo == null) return true;
+      return value >= costo;
     }),
-    porcentaje: yup.number().typeError("El porcentaje debe ser un valor númerico").min(0,"El porcentaje mínimo debe ser mayor o igual a 0").max(999, "El porcentaje máximo permitido es de 999").optional().nullable(),
+    porcentaje: yup.number().typeError("El porcentaje debe ser un valor númerico").min(0,"El porcentaje mínimo debe ser mayor o igual a 0").max(99999, "El porcentaje máximo permitido es de 99999").optional().nullable(),
+    motivo: yup.string().optional(),
     /* costoEnDolar: yup.boolean().optional().nullable(),
     costoDolar: yup.number().optional().nullable(),
     destacado: yup.boolean().optional().nullable(),
@@ -92,12 +90,12 @@ export const schema = (utilizaStockMinimo: boolean, utilizaPack: boolean, usaOfe
       .oneOf(Object.values(AlicuotaIva), "Alicuota IVA inválida")
       .required("La alícuota IVA es obligatoria.")
       .nullable(),
-    /* ubicacion: yup.string().optional().max(255, "Máximo 255 caracteres.").nullable(),
+    /* ubicacion: yup.string().optional().max(255, "Máximo 255 caracteres.").nullable(), */
     presentacionId: yup
       .number()
-      .typeError("La unidad de medida es obligatoria.")
-      .required("La unidad de medida es obligatoria."),
-    subLineaId: yup
+      .typeError("La presentación es obligatoria.")
+      .required("La presentación es obligatoria."),
+    /* subLineaId: yup
     .number()
     .typeError("La sublinea es obligatoria.")
     .optional()
@@ -107,17 +105,11 @@ export const schema = (utilizaStockMinimo: boolean, utilizaPack: boolean, usaOfe
       then: (schema) => schema.required("El Stock minimo es obligatorio.").moreThan(0, "El stock minimo debe ser mayor a 0."),
       otherwise: (schema) => schema.optional(),
     }),
-    cantidadPorPack: yup.number().when([], {
-      is: () => utilizaPack,
-      then: (schema) => schema.required("La cantidad por pack es obligatoria.").moreThan(0, "La cantidad por pack debe ser mayor a 0."),
-      otherwise: (schema) => schema.optional(),
-    }),
    /*  cantidadOferta: yup.number().when([], {
       is: () => usaOferta,
       then: (schema) => schema.required("La cantidad de oferta es obligatoria.").moreThan(0, "La cantidad de oferta debe ser mayor a 0."),
       otherwise: (schema) => schema.optional(),
     }), */
-    utilizaPack: yup.boolean().optional(),
     utilizaStockMinimo: yup.boolean().optional(),
     /* porcentajeOcasional: yup
       .number()
@@ -159,30 +151,25 @@ export const transformData = (producto: Producto): FormValues => {
   return {
     denominacion: producto.denominacion,
     observacion: producto.observacion ?? null,
-    codigoProveedor: producto.codigoProveedor ?? "",
     codigoReferencia: producto.codigoReferencia ?? "",
-    codigoBarra: producto.codigoBarra ?? null,
     stock: producto.stock ?? null,
     costo: producto.costo ?? null,
     precio: producto.precio ?? null,
     porcentaje: producto.porcentaje ?? null,
-   // oferta: producto.oferta ?? null,
+    // oferta: producto.oferta ?? null,
     /* costoEnDolar: producto.costoEnDolar ?? null,
     costoDolar: producto.costoDolar ?? null,
     destacado: producto.destacado ?? null,
     
     envioGratis: producto.envioGratis ?? null, */
     alicuotaIva: producto.alicuotaIva ?? null,
-   // ubicacion: producto.ubicacion ?? null,
+    // ubicacion: producto.ubicacion ?? null,
     marcaId: producto.marca.id ?? 0,
     lineaId: producto.linea.id ?? 0,
-   /*  subLineaId: producto.sublinea?.id ?? 0,
-    presentacionId: producto.presentacion.id ?? 0,
- */
+    /*  subLineaId: producto.sublinea?.id ?? 0, */
+    presentacionId: producto.presentacion?.id ?? 0,
     stockMinimo: producto.stockMinimo ?? null,
-    cantidadPorPack: producto.cantidadPorPack ?? null,
     utilizaStockMinimo: producto.utilizaStockMinimo,
-    utilizaPack: producto.utilizaPack,
  //   cantidadOferta: producto.cantidadOferta ?? 0,
    /*  porcentajeOcasional: producto.porcentajeOcasional ?? 0,
     porcentajeMayorista: producto.porcentajeMayorista ?? 0,

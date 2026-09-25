@@ -13,9 +13,9 @@ import {
 import { AlicuotaIva } from 'src/modules/organizacion/enums/alicuota-iva.enum';
 
 export class CreateProductoDto {
-  @Transform(({ value }) => value.trim().toLowerCase())
+  @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
   @IsString({ message: 'La denominación debe ser una cadena de texto.' }) // Valida que sea string
-  @IsNotEmpty({ message: 'La denominación no puede estar vacía.' }) // Valida que no esté vacía
   @MaxLength(255, { message: 'La denominación no puede estar vacía.' })
   /*  @Matches(/^[A-Za-z0-9 áéíóúÁÉÍÓÚñÑ.\-/]+$/, {
     message:
@@ -24,20 +24,15 @@ export class CreateProductoDto {
   @Matches(/^[\w áéíóúÁÉÍÓÚñÑ.\-/%]+$/, {
     message: 'La denominación contiene caracteres inválidos ',
   })
-  denominacion: string;
+  denominacion?: string;
+
+  @IsOptional()
+  @IsInt({ message: 'La presentación debe ser un número entero.' })
+  presentacionId?: number;
 
   @IsOptional()
   @IsString()
   observacion?: string;
-
-  // si no tiene poner vacio
-  @IsOptional()
-  @IsString()
-  codigoProveedor?: string;
-
-  @IsOptional()
-  @IsString()
-  codigoBarra?: string;
 
   @IsOptional()
   @IsString()
@@ -77,13 +72,6 @@ export class CreateProductoDto {
   @IsNumber()
   costo?: number;
 
-  @IsBoolean()
-  utilizaPack: boolean;
-
-  @IsOptional()
-  @IsInt()
-  cantidadPorPack?: number;
-
   @IsOptional()
   @IsNumber()
   costoDolar?: number;
@@ -101,11 +89,13 @@ export class CreateProductoDto {
   @IsOptional()
   @IsNumber()
   porcentaje?: number;
-
-  @IsOptional()
-  @IsNumber()
-  precio: number;
-
+  // elimino: 
+  // @IsOptional()
+  //@IsNumber()
+  //precio: number;
+  //Como el ValidationPipe global tiene whitelist: true y forbidNonWhitelisted: true (main.ts), si alguien manda precio en el body igual, 
+  // la request se rechaza directamente por tener una propiedad no permitida. Y como UpdateProductoDto 
+  // extiende PartialType(CreateProductoDto), el campo desaparece también de la edición automáticamente.
   createdAt?: Date;
 
   @IsEnum(AlicuotaIva, {

@@ -6,6 +6,7 @@ import {
   IsString,
   MaxLength,
   Matches,
+  IsOptional,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -25,4 +26,8 @@ export class UpdateProductoDto extends PartialType(CreateProductoDto) {
   usuarioUpdatedId: number;
 
   updatedAt: Date;
+
+  @IsString({ message: 'El motivo debe ser una cadena de texto.' })
+  @IsOptional()
+  motivo?: string;
 }

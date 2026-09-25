@@ -6,6 +6,7 @@ import { UpdateProductoDto } from '../../dto/update-producto.dto';
 import { IUnitOfWork } from 'src/modules/common/unit-of-work/iunit-of-work.';
 import { Usuario } from 'src/modules/gestion-usuario/usuario/domain/entities/usuario.entity';
 import { UpdatePrecioDto } from '../../dto/update-precio.dto';
+import { HistorialPrecio } from '../entities/historial-precio.entity';
 
 export interface IProductoRepository {
 
@@ -22,11 +23,10 @@ export interface IProductoRepository {
 
   findBy(
     denominacion: string,
-    codigoProveedor: string,
-    codProveedorExacto: boolean,
     codigoReferencia: string,
     marca_id: number,
     linea_id: number,
+    superLineaId: number,
     proveedor_id: number,
     conStock: boolean,
     skip: number,
@@ -58,12 +58,10 @@ export interface IProductoRepository {
     dto: UpdatePrecioDto,
     usuario: Usuario,
   ): Promise<void>;
+
+  getHistorialPrecios(productoId: number): Promise<HistorialPrecio[]>;
   remove(data: Producto, usuario: Usuario): Promise<Producto>;
 
-  isCodigoProveedorDuplicado(
-    codigoProveedor: string | null,
-    id?: number,
-  ): Promise<boolean>;
 
   findByDenominacionCodigoProveedorFiltered(
     denominacion: string,
@@ -75,9 +73,20 @@ export interface IProductoRepository {
     denominacion: string,
     excludeId?: number,
   ): Promise<boolean>;
-  existsByCodigoProveedor(codigoProveedor: string, excludeId: number): Promise<boolean>;
+
   existsProductosActivosByMarca(marcaId: number): Promise<boolean>;
   existsProductosActivosByLinea(lineaId: number): Promise<boolean>;
+  existsProductosActivosByPresentacion(presentacionId: number): Promise<boolean>;
 
   findByIds(ids: number[]): Promise<Producto[]>;
+
+  /**
+   * Alcance para el aumento masivo de precios (Decisión de diseño #9 de la
+   * HU CR-006): reusa los mismos filtros de línea/marca que ya tiene la
+   * búsqueda de productos. Sin filtros, devuelve todos los productos activos.
+   */
+  findActivosPorLineaOMarca(
+    lineaId?: number,
+    marcaId?: number,
+  ): Promise<Producto[]>;
 }

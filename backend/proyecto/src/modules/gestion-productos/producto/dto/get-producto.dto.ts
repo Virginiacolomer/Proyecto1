@@ -26,16 +26,11 @@ export class GetProductoDto {
   denominacion: string;
 
   @ApiProperty({
-    example: '1158 Caja de tornillos',
-    description:
-      'Codigo proveedor Denominación o nombre del producto. Esta formado por la linea y la marca',
+    example: 'Pack x6',
+    description: 'Presentación del producto',
   })
   @IsString()
-  codigoProveedorDenominacion: string;
-
-  @ApiProperty({ example: 'ABC-1234', description: 'Código del proveedor' })
-  @IsString()
-  codigoProveedor: string;
+  presentacion: string;
 
   @ApiProperty({ example: 'ABC-1234', description: 'Código del proveedor' })
   @IsString()
@@ -112,21 +107,6 @@ export class GetProductoDto {
   @IsInt()
   @Min(0)
   stockMinimo: number;
-
-  @ApiProperty({
-    description: 'Indica si posee utiliza Stock minimo',
-    type: Boolean,
-    example: false,
-  })
-  @IsBoolean()
-  @IsNotEmpty()
-  utilizaPack: boolean;
-
-  @ApiProperty({ example: 50, description: 'Cantidad en stock minimo' })
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  cantidadPorPack: number;
 
   @IsString()
   codigoReferencia: string;

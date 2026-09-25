@@ -6,10 +6,13 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
   Index,
 } from 'typeorm';
 
 import { Producto } from '../../../producto/domain/entities/producto.entity';
+import { SuperLinea } from '../../../superlinea/domain/entities/super-linea.entity';
 import { CantidadColumn } from 'src/modules/common/decorators/cantidad-column.decorator';
 
 @Entity('linea')
@@ -23,6 +26,13 @@ export class Linea {
 
   @Column({ type: 'text', nullable: true })
   observacion?: string;
+
+  @ManyToOne(() => SuperLinea, (superlinea) => superlinea.lineas)
+  @JoinColumn({ name: 'super_linea_id' })
+  superlinea: SuperLinea;
+
+  @Column({ type: 'int', name: 'super_linea_id', nullable: false })
+  superLineaId: number;
 
   @OneToMany(() => Producto, (producto) => producto.linea)
   productos: Producto[];

@@ -8,8 +8,12 @@ import {
   Index,
   JoinColumn,
 } from 'typeorm';
+import { BadRequestException } from '@nestjs/common';
+import { ProductoInvalidoException } from '../exceptions/producto-invalido.exception';
+import { redondear5 } from 'src/modules/common/utils/number/redondeo';
 import { Linea } from '../../../linea/domain/entities/linea.entity';
 import { Marca } from '../../../marca/domain/entities/marca.entity';
+import { Presentacion } from '../../../presentacion/domain/entities/presentacion.entity';
 import { AlicuotaIva } from 'src/modules/organizacion/enums/alicuota-iva.enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { ProductoOperacion } from '../../../producto-operacion/entities/producto-operacion.entity';
@@ -18,6 +22,9 @@ import { MonetarioColumn } from 'src/modules/common/decorators/monetario-column.
 import { CantidadColumn } from 'src/modules/common/decorators/cantidad-column.decorator';
 import { PorcentajeColumn } from 'src/modules/common/decorators/porcentaje-column.decorator';
 import { Proveedor } from 'src/modules/organizacion/proveedor/domain/entities/proveedor.entity';
+import { TipoAjustePrecio } from '../../../cambio-precios/domain/enums/tipo-ajuste-precio.enum';
+import { OneToMany } from 'typeorm';
+import { HistorialPrecio } from './historial-precio.entity';
 
 @Entity('producto')
 export class Producto {
@@ -29,12 +36,13 @@ export class Producto {
   @Column({ type: 'text' })
   denominacion: string;
 
-  @Index()
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  codigoProveedor?: string | null;
+  @ApiProperty({ description: 'Presentación del producto' })
+  @ManyToOne(() => Presentacion, (presentacion) => presentacion.productos)
+  @JoinColumn({ name: 'presentacion_id' })
+  presentacion: Presentacion;
 
-  @Column({ type: 'text', nullable: true })
-  codigoBarra?: string | null;
+  @Column({ type: 'int', nullable: true })
+  presentacionId?: number;
 
   // ========== PROVEEDOR ==========
   @ManyToOne(() => Proveedor, (pro) => pro.proveedoresOperacion, {
@@ -150,12 +158,6 @@ export class Producto {
   marcaId?: number;
 
 
-  @Column({ default: false })
-  utilizaPack: boolean;
-
-  @Column({ type: 'int', nullable: true })
-  cantidadPorPack: number | null;
-
   @Column({ type: 'text', nullable: true })
   imagen?: string;
 
@@ -166,10 +168,179 @@ export class Producto {
   @ManyToOne(() => Producto, (producto) => producto.productosOperacion)
   productosOperacion: ProductoOperacion;
 
+  // ========== HISTORIAL DE PRECIOS ==========
+  @OneToMany(() => HistorialPrecio, (historial) => historial.producto)
+  historialPrecios: HistorialPrecio[];
 
   @Column({ type: 'int', default: 0 })
   sistema: number;
 
   @Column({ type: 'text', nullable: true })
   codigoReferencia?: string | null;
+
+  /**
+   * Valida y aplica costo, margen y stock según las reglas de negocio.
+   * Se ejecuta en el dominio (no en el DTO ni en el controller) para que
+   * ninguna vía de acceso (formulario, importación, otro servicio interno)
+   * pueda persistir un producto inconsistente.
+   *
+   * Si algún dato es inválido, no modifica el estado del producto y lanza
+   * ProductoInvalidoException con TODOS los errores encontrados.
+   */
+  establecerCostoMargenYStock(datos: {
+    costo?: number;
+    margen?: number;
+    stock?: number;
+    stockMinimo?: number;
+  }): void {
+    const costo = datos.costo ?? this.costo ?? 0;
+    const margen = datos.margen ?? this.porcentaje ?? 0;
+    const stock = datos.stock ?? this.stock ?? 0;
+    const stockMinimo = datos.stockMinimo ?? this.stockMinimo ?? 0;
+
+    const errores: string[] = [];
+
+    if (costo <= 0) {
+      errores.push('El costo debe ser mayor a cero');
+    }
+    if (margen < 0) {
+      errores.push('El margen no puede ser negativo');
+    }
+    if (stock < 0) {
+      errores.push('El stock actual no puede ser negativo');
+    }
+    if (stockMinimo < 0) {
+      errores.push('El stock mínimo no puede ser negativo');
+    }
+
+    if (errores.length > 0) {
+      throw new ProductoInvalidoException(errores);
+    }
+
+    this.costo = costo;
+    this.porcentaje = margen;
+    this.stock = stock;
+    this.stockMinimo = stockMinimo;
+    // El precio de venta siempre se deriva de costo + margen.
+    // Nunca se acepta un valor de precio cargado externamente.
+    this.precio = redondear5(costo + costo * (margen / 100));
+  }
+
+  /**
+   * Genera la denominación automática según la regla de negocio de CR-005:
+   * Fórmula: Marca + Línea + Presentación.
+   *
+   * Recorta extremos (trim), elimina espacios dobles/múltiples intermedios
+   * y valida que no supere 255 caracteres ni resulte vacía.
+   */
+  generarDenominacionAutomatica(presentacionParam?: string): string {
+    const nombreMarca = this.marca?.denominacion?.trim() || '';
+    const nombreLinea = this.linea?.denominacion?.trim() || '';
+    const textoPresentacion =
+      typeof this.presentacion === 'string'
+        ? this.presentacion
+        : (this.presentacion as any)?.denominacion;
+    const nombrePresentacion = (presentacionParam ?? textoPresentacion ?? '')?.trim() || '';
+
+    const partes = [nombreMarca, nombreLinea, nombrePresentacion].filter(Boolean);
+    const resultado = partes.join(' ').replace(/\s+/g, ' ').trim();
+
+    if (!resultado) {
+      throw new ProductoInvalidoException([
+        'No se puede generar la denominación automática sin al menos Marca, Línea o Presentación',
+      ]);
+    }
+
+    if (resultado.length > 255) {
+      throw new ProductoInvalidoException([
+        'La denominación automática excede los 255 caracteres permitidos',
+      ]);
+    }
+
+    return resultado;
+  }
+
+  /**
+   * Asigna la denominación del producto cumpliendo las reglas de negocio (CR-005):
+   * - Si se provee una denominación manual, la normaliza y valida su longitud máxima.
+   * - Si no se provee denominación (o viene vacía), autogenera el nombre mediante Marca + Línea + Presentación.
+   */
+  asignarDenominacion(denominacionManual?: string | null, presentacionParam?: string): void {
+    const limpia = denominacionManual?.replace(/\s+/g, ' ').trim();
+
+    if (limpia && limpia.length > 0) {
+      if (limpia.length > 255) {
+        throw new ProductoInvalidoException([
+          'La denominación no puede exceder los 255 caracteres',
+        ]);
+      }
+      this.denominacion = limpia;
+      return;
+    }
+
+    // Si viene vacía o nula, autogenera a partir de los datos base
+    this.denominacion = this.generarDenominacionAutomatica(presentacionParam);
+  }
+
+  /**
+   * Calcula cómo quedaría el producto si se aplicara un aumento por
+   * porcentaje o por monto fijo, SIN modificarlo todavía.
+   *
+   * Como el precio siempre se deriva de costo + margen (ver
+   * establecerCostoMargenYStock), un aumento de precio se traduce en un
+   * COSTO nuevo: el margen se mantiene y el costo se despeja para que el
+   * precio resultante sea el buscado. Si el costo actual es 0, el aumento
+   * de monto fijo igual da un costo distinto de cero (parte del precio 0).
+   *
+   * Decisión de diseño #2 (HU CR-006): el cálculo vive en la entidad,
+   * no en el service que orquesta el aumento masivo.
+   */
+  calcularAumento(
+    tipoAjuste: TipoAjustePrecio,
+    valor: number,
+  ): { costoNuevo: number; precioNuevo: number } {
+    const precioActual = this.precio ?? 0;
+    const margen = this.porcentaje ?? 0;
+
+    const precioObjetivo =
+      tipoAjuste === TipoAjustePrecio.PORCENTAJE
+        ? precioActual + precioActual * (valor / 100)
+        : precioActual + valor;
+
+    const costoNuevo = redondear5(precioObjetivo / (1 + margen / 100));
+    // Mismo cálculo que establecerCostoMargenYStock, para que lo que se
+    // muestra en la previsualización sea exactamente lo que se guarda.
+    const precioNuevo = redondear5(costoNuevo + costoNuevo * (margen / 100));
+
+    if (precioNuevo <= 0) {
+      throw new BadRequestException(
+        `El ajuste dejaría el precio de "${this.denominacion}" en $${precioNuevo}; no puede ser cero ni negativo.`,
+      );
+    }
+
+    return { costoNuevo, precioNuevo };
+  }
+
+  /** Precio que tendría el producto tras el aumento (para la previsualización). */
+  simularAumento(tipoAjuste: TipoAjustePrecio, valor: number): number {
+    return this.calcularAumento(tipoAjuste, valor).precioNuevo;
+  }
+
+  /**
+   * Aplica el aumento: actualiza el costo y deja que
+   * establecerCostoMargenYStock recalcule el precio (y valide). Devuelve el
+   * precio anterior para que quien orquesta el aumento masivo arme el
+   * registro de HistorialPrecio (motivo/usuario/lote no son datos del
+   * Producto).
+   */
+  confirmarAumento(tipoAjuste: TipoAjustePrecio, valor: number): number {
+    const precioAnterior = this.precio ?? 0;
+    const { costoNuevo } = this.calcularAumento(tipoAjuste, valor);
+
+    this.establecerCostoMargenYStock({ costo: costoNuevo });
+    this.fechaCosto = new Date();
+
+    return precioAnterior;
+  }
 }
+

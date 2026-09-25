@@ -10,6 +10,7 @@ import { DatabaseConnectionException } from 'src/modules/common/exceptions/datab
 import { IUnitOfWork } from 'src/modules/common/unit-of-work/iunit-of-work.';
 import { Usuario } from 'src/modules/gestion-usuario/usuario/domain/entities/usuario.entity';
 import { UpdatePrecioDto } from '../../dto/update-precio.dto';
+import { HistorialPrecio } from '../../domain/entities/historial-precio.entity';
 
 @Injectable()
 export class ProductoRepository implements IProductoRepository {
@@ -72,11 +73,10 @@ export class ProductoRepository implements IProductoRepository {
 
   async findBy(
     denominacion: string,
-    codigoProveedor: string,
-    codProveedorExacto: boolean,
     codigoReferencia: string,
     marca_id: number,
     linea_id: number,
+    superLineaId: number,
     proveedor_id: number,
     conStock: boolean,
     skip: number,
@@ -84,11 +84,10 @@ export class ProductoRepository implements IProductoRepository {
   ): Promise<{ data: Producto[]; total: number }> {
     return this.persistenceService.findBy(
       denominacion,
-      codigoProveedor,
-      codProveedorExacto,
       codigoReferencia,
       marca_id,
       linea_id,
+      superLineaId,
       proveedor_id,
       conStock,
       skip,
@@ -122,18 +121,13 @@ export class ProductoRepository implements IProductoRepository {
     return entity;
   }
 
-  async isCodigoProveedorDuplicado(
-    codigoProveedor: string | null,
-    id?: number,
-  ): Promise<boolean> {
-    return this.persistenceService.isCodigoProveedorDuplicado(
-      codigoProveedor,
-      id,
-    );
-  }
 
   async actualizarPrecio(id: number, dto: UpdatePrecioDto, usuario: Usuario) {
     return this.persistenceService.actualizarPrecio(id, dto, usuario);
+  }
+
+  async getHistorialPrecios(productoId: number): Promise<HistorialPrecio[]> {
+    return this.persistenceService.getHistorialPrecios(productoId);
   }
 
 
@@ -169,6 +163,10 @@ export class ProductoRepository implements IProductoRepository {
     return this.persistenceService.existsProductosActivosByLinea(lineaId);
   }
 
+  async existsProductosActivosByPresentacion(presentacionId: number): Promise<boolean> {
+    return this.persistenceService.existsProductosActivosByPresentacion(presentacionId);
+  }
+
 
   async findByIdWithoutRelations(id: number): Promise<Producto | null> {
     return this.persistenceService.findByIdWithoutRelations(id);
@@ -178,8 +176,12 @@ export class ProductoRepository implements IProductoRepository {
     return this.persistenceService.existsByDenominacion(denominacion, excludeId); 
   }
 
-  async  existsByCodigoProveedor(codigoProveedor: string, excludeId: number): Promise<boolean> {
-   return this.persistenceService.existsByCodigoProveedor(codigoProveedor, excludeId);
+
+  async findActivosPorLineaOMarca(
+    lineaId?: number,
+    marcaId?: number,
+  ): Promise<Producto[]> {
+    return this.persistenceService.findActivosPorLineaOMarca(lineaId, marcaId);
   }
 
 }

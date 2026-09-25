@@ -96,7 +96,7 @@ export class SeedFamiliaProductoService {
         const linea = this.lineaRepository.create({
           denominacion: data.denominacion.toUpperCase(),
           sistema: data.sistema,
-
+          superLineaId: 1,
           usuarioCreatedId: usuarioCreated.id,
         } as DeepPartial<Linea>); 
 

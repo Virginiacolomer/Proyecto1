@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { CardContent, CardFooter } from "../../../ui/Card";
@@ -6,11 +6,14 @@ import { Button } from "../../../ui/Button";
 import FormInput from "../../../herramientas/formateo-de-campos/form-input";
 import React from "react";
 import { Card } from "../../../ui/Card";
-import { FormValues, schema, transformData, SublineasEnPayload, transformarSublineas } from "../interfaces/interfaces-validaciones-linea";
+import { FormValues, schema, transformData } from "../interfaces/interfaces-validaciones-linea";
 import LineaService from "../services/linea-service";
+import SuperLineaService from "../../superlinea/services/superlinea-service";
+import RegistrarActualizarSuperlineaForm from "../../superlinea/utils/registrar-actualizar-superlinea";
 import { Linea } from "../../../../interfaces/gestion-producto/linea/interfaces-linea";
+import { Superlinea } from "../../../../interfaces/gestion-producto/superlinea/interfaces-superlinea";
 
-import { Layers, PlusCircle } from "lucide-react";
+import { Layers, Plus } from "lucide-react";
 import { parseApiError } from "../../../../utils/errores";
 import { ResponsePost } from "../../../../interfaces/generales/interfaces-generales";
 import CantidadesInput from "../../../herramientas/formateo-de-campos/cantidades-input";
@@ -34,6 +37,8 @@ export default function RegistrarActualizarLineaForm({
   const usuarioId = getUsuarioId();
   const { showConfirmation, AlertasConfirmacion } = useConfirmation();
   const [rStockCritico, setStockCritico] = useState(false);
+  const [superlineas, setSuperlineas] = useState<Superlinea[]>([]);
+  const [mostrarModalSuperlinea, setMostrarModalSuperlinea] = useState(false);
 
   const methods = useForm<FormValues>({
     resolver: yupResolver(schema(rStockCritico)) as any,
@@ -46,9 +51,9 @@ export default function RegistrarActualizarLineaForm({
     setValue,
     watch,
     setError,
+    register,
   } = methods;
 
- 
   const stockMinimo = watch("stockMinimo");
   const utilizaStockMinimo = watch("utilizaStockMinimo");
 
@@ -62,28 +67,29 @@ export default function RegistrarActualizarLineaForm({
     setStockCritico(utilizaStockMinimo || false);
   }, [utilizaStockMinimo]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        if (linea) {
-          setValue("denominacion", linea.denominacion || "");
-          setValue("observacion", linea.observacion || null);
-          setValue("stockMinimo", linea.stockMinimo || 0);
-          setValue("utilizaStockMinimo", linea.utilizaStockMinimo || false);
-          
-        }
-      } catch (error) {
-        console.error("Error al obtener los datos:", error);
+  const cargarSuperlineas = async () => {
+    try {
+      const listaSuperlineas = await SuperLineaService.obtenerListado();
+      setSuperlineas(listaSuperlineas || []);
+      if (linea) {
+        setValue("denominacion", linea.denominacion || "");
+        setValue("superLineaId", linea.superLineaId || (linea.superlinea?.id ?? 0));
+        setValue("observacion", linea.observacion || null);
+        setValue("stockMinimo", linea.stockMinimo || 0);
+        setValue("utilizaStockMinimo", linea.utilizaStockMinimo || false);
       }
-    };
-    fetchData();
+    } catch (error) {
+      console.error("Error al obtener los datos de superlíneas:", error);
+    }
+  };
+
+  useEffect(() => {
+    cargarSuperlineas();
   }, []);
 
   const onSubmit = async (formData: FormValues) => {
     let response: ResponsePost;
     try {
-     
-
       if (linea) {
         const payload = { ...formData, usuarioUpdatedId: usuarioId };
         response = await LineaService.actualizar(linea.id, payload);
@@ -98,11 +104,6 @@ export default function RegistrarActualizarLineaForm({
     }
   };
 
- 
-
-  
-
-  
   const handleOnClose = async () => {
     const confirmed = await showConfirmation({
       type: TipoAlertaConfirmacion.DEFAULT,
@@ -129,8 +130,37 @@ export default function RegistrarActualizarLineaForm({
           <FormProvider {...methods}>
             <form onSubmit={handleSubmit(onSubmit)}>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 px-6 py-4">
-                <div className="lg:col-span-2">
+                <div className="lg:col-span-2 space-y-1">
                   <FormInput name="denominacion" label="Denominación" placeholder="Ingresa la denominación" />
+                </div>
+
+                <div className="lg:col-span-2 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="label-base block text-sm font-medium text-gray-700">
+                      SuperLínea <span className="text-red-500">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setMostrarModalSuperlinea(true)}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" /> Crear SuperLínea
+                    </button>
+                  </div>
+                  <select
+                    {...register("superLineaId", { valueAsNumber: true })}
+                    className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Seleccione una SuperLínea...</option>
+                    {superlineas.map((sl) => (
+                      <option key={sl.id} value={sl.id}>
+                        {sl.denominacion}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.superLineaId && (
+                    <small className="text-red-500 block">{errors.superLineaId.message as string}</small>
+                  )}
                 </div>
 
                 <div className="lg:col-span-2">
@@ -168,7 +198,16 @@ export default function RegistrarActualizarLineaForm({
         </fieldset>
       </Card>
 
-     
+      {mostrarModalSuperlinea && (
+        <RegistrarActualizarSuperlineaForm
+          onClose={() => setMostrarModalSuperlinea(false)}
+          onSuccess={(msg) => {
+            setMostrarModalSuperlinea(false);
+            cargarSuperlineas();
+          }}
+        />
+      )}
+
       <AlertasConfirmacion />
     </div>
   );

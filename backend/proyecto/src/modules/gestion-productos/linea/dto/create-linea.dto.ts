@@ -32,6 +32,10 @@ export class CreateLineaDto {
   @IsString()
   observacion?: string;
 
+  @IsNotEmpty({ message: 'La superlínea es obligatoria.' })
+  @IsInt({ message: 'El ID de superlínea debe ser un número entero.' })
+  superLineaId: number;
+
   createdAt?: Date;
 
   @IsNotEmpty({ message: 'El usuarioCreatedId es obligatorio.' })

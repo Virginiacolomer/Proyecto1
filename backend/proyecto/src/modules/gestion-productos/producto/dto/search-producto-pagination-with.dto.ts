@@ -8,10 +8,6 @@ export class SearchProductoPaginationWithDto {
 
   @IsOptional()
   @IsString()
-  codigoProveedor: string;
- 
-  @IsOptional()
-  @IsString()
   codigoReferencia: string;
   
   @Transform(({ value }) => {
@@ -22,13 +18,6 @@ export class SearchProductoPaginationWithDto {
   @IsBoolean()
   codReferenciaExacto: boolean = false;
 
-  @Transform(({ value }) => {
-    if (value === 'true') return true;
-    if (value === 'false') return false;
-    return undefined;
-  })
-  @IsBoolean()
-  codProveedorExacto: boolean = false;
 
   @IsInt()
   @Min(0, { message: 'skip debe ser un número entero positivo o 0' })
@@ -50,6 +39,11 @@ export class SearchProductoPaginationWithDto {
   @Type(() => Number)
   @IsInt()
   lineaId: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  superLineaId: number;
 
   @IsOptional()
   @Type(() => Number)

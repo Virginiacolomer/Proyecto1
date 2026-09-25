@@ -1,6 +1,7 @@
 import { Producto } from "../../../../interfaces/gestion-producto/producto/interfaces-producto";
 import InformacionAuditoria from "../../../herramientas/reutilizables/informacion-auditoria";
 import RegistrarActualizarProductoForm from "../utils/registrar-actualizar-producto";
+import HistorialPrecioProducto from "../utils/historial-precio-producto";
 
 interface Props {
   isAltaOpen: boolean;
@@ -8,7 +9,6 @@ interface Props {
     mostrarInfoAuditoria: boolean;
     mostrarMovimientosStock: boolean;
     mostrarHistorialPrecios: boolean;
-    mostrarCambioPrecios: boolean;
     mostrarProductosAlternativos: boolean;
     mostrarDeQuienEsAlternativo: boolean;
     productoSeleccionado: Producto | null;
@@ -19,7 +19,6 @@ interface Props {
     onCloseAuditoria: () => void;
     onCloseMovimientosStock: () => void;
     onCloseHistorialPrecios: () => void;
-    onCloseCambioPrecios: () => void;
     onCloseProductosAlternativos: () => void;
     onCloseDeQuienEsAlternativo: () => void;
   onSuccessAlta: (mensaje: string, producto?: Producto) => void;
@@ -33,7 +32,6 @@ export function ProductosModales({
   mostrarInfoAuditoria,
   mostrarMovimientosStock,
   mostrarHistorialPrecios,
-  mostrarCambioPrecios,
   mostrarProductosAlternativos,
   mostrarDeQuienEsAlternativo,
   productoSeleccionado,
@@ -44,7 +42,6 @@ export function ProductosModales({
   onCloseAuditoria,
   onCloseMovimientosStock,
   onCloseHistorialPrecios,
-  onCloseCambioPrecios,
   onCloseProductosAlternativos,
   onCloseDeQuienEsAlternativo,
   onSuccessAlta,
@@ -79,6 +76,14 @@ export function ProductosModales({
       )}
 
 
+      {mostrarHistorialPrecios && productoInfo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <HistorialPrecioProducto
+            producto={productoInfo}
+            onClose={onCloseHistorialPrecios}
+          />
+        </div>
+      )}
     </>
   );
 }

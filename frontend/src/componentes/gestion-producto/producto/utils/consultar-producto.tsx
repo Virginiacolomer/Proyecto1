@@ -100,7 +100,6 @@ export default function ConsultarProductos() {
     setBuscar({ cont: 0, componente: "consultar-producto" });
     setFiltrosNecesarios({
       denominacion: true,
-      codigoProveedor: true,
       linea: true,
       marca: true,
       proveedor: true,
@@ -358,14 +357,12 @@ export default function ConsultarProductos() {
 
     const filtrosConPaginacion = {
       denominacion: valoresFiltros.denominacion,
-      codigoProveedor: valoresFiltros.codigoProveedor,
       codigoReferencia: valoresFiltros.codigoReferencia,
       lineaId: valoresFiltros.lineaId,
       marcaId: valoresFiltros.marcaId,
       proveedorId: valoresFiltros.proveedorId,
       conStock: valoresFiltros.conStock,
       codReferenciaExacto: valoresFiltros.codReferenciaExacto,
-      codProveedorExacto: valoresFiltros.codProveedorExacto,
       skip: skip,
       take: take,
     };
@@ -402,9 +399,7 @@ export default function ConsultarProductos() {
 
     const filtrosConPaginacion = {
       denominacion: valoresFiltros.denominacion,
-      codigoProveedor: valoresFiltros.codigoProveedor,
       codigoReferencia: valoresFiltros.codigoReferencia,
-      codProveedorExacto: valoresFiltros.codProveedorExacto,
       codReferenciaExacto: valoresFiltros.codReferenciaExacto,
       lineaId: valoresFiltros.lineaId,
       marcaId: valoresFiltros.marcaId,
@@ -453,7 +448,7 @@ export default function ConsultarProductos() {
   const columns: Column<ConsultarProducto>[] = [
     {
       header: "Cód.",
-      accessor: "codigoProveedor",
+      accessor: "codigoReferencia",
       flex: 0.3,
       type: "text",
       align: "right",

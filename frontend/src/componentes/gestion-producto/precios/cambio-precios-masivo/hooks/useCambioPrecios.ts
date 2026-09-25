@@ -1,80 +1,81 @@
 import { useState } from "react";
-import CambioPreciosMasivoService from "../cambio-precios-masivo-service";
-import { ConsultarProductosCambioPreciosMasivo } from "../../../../../interfaces/gestion-producto/producto/interfaces-producto";
-import { ResponsePost } from "../../../../../interfaces/generales/interfaces-generales";
+import CambioPreciosMasivoService, {
+  AumentoMasivoPayload,
+} from "../cambio-precios-masivo-service";
+import {
+  ConsultarProductosCambioPreciosMasivo,
+  ResultadoAumentoMasivo,
+} from "../../../../../interfaces/gestion-producto/producto/interfaces-producto";
 
 export function useCambioPrecios(usuarioId: number | null) {
-  const [productos, setProductos] =
-    useState<ConsultarProductosCambioPreciosMasivo[]>([]);
+  const [productos, setProductos] = useState<
+    ConsultarProductosCambioPreciosMasivo[]
+  >([]);
+  const [ultimoPayload, setUltimoPayload] =
+    useState<AumentoMasivoPayload | null>(null);
+  const [resultado, setResultado] = useState<ResultadoAumentoMasivo | null>(
+    null
+  );
   const [loading, setLoading] = useState(false);
 
-  const buscarProductos = async (filtros: any) => {
+  // Paso 1 (Decisión #3): calcula la previsualización, no guarda nada.
+  const simular = async (payload: AumentoMasivoPayload) => {
     setLoading(true);
-
-    const productosFiltrados =
-      await CambioPreciosMasivoService.obtenerDesde(
-        filtros,
-        "productos"
-      );
-
-    setProductos(productosFiltrados.data);
-    setLoading(false);
+    try {
+      const preview = await CambioPreciosMasivoService.simular(payload);
+      setProductos(preview);
+      setUltimoPayload(payload);
+      setResultado(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const aplicarCambios = async (porcentaje: number) => {
+  // Paso 2 (Decisión #4): el backend vuelve a calcular todo; acá solo se
+  // manda el mismo filtro/ajuste que ya se simuló, más el motivo.
+  const aplicar = async (motivo: string) => {
+    if (!ultimoPayload) {
+      throw new Error("Primero hay que simular un aumento.");
+    }
+    if (!usuarioId) {
+      throw new Error("No se pudo identificar al usuario que aplica el cambio.");
+    }
+
     setLoading(true);
-
-    const payload = {
-      items: productos,
-      porcentaje,
-    };
-
-    const productosActualizados =
-      await CambioPreciosMasivoService.aplicarCambios(payload);
-
-    setProductos(productosActualizados);
-    setLoading(false);
+    try {
+      const resultadoAplicado = await CambioPreciosMasivoService.aplicar({
+        ...ultimoPayload,
+        motivo,
+        usuarioCreatedId: usuarioId,
+      });
+      setResultado(resultadoAplicado);
+      setProductos([]);
+      setUltimoPayload(null);
+      return resultadoAplicado;
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const guardarCambios = async (): Promise<ResponsePost> => {
-    setLoading(true);
-
-    const payload = {
-      items: productos,
-      usuarioCreatedId: usuarioId,
-    };
-
-    const response =
-      await CambioPreciosMasivoService.guardarCambios(payload);
-
-    setProductos((prev) =>
-      prev.map((p) => ({ ...p, dirty: false }))
-    );
-
-    setLoading(false);
-
-    return response;
+  // Sacar un producto puntual de la previsualización antes de confirmar
+  // (no pega al backend, solo ajusta la vista previa local).
+  const quitarProductoDeLaPrevisualizacion = (productoId: number) => {
+    setProductos((prev) => prev.filter((p) => p.productoId !== productoId));
   };
 
-  const actualizarProductoLocal = (
-   productoActualizado: ConsultarProductosCambioPreciosMasivo
-   ) => {
-   setProductos((prevProductos) =>
-      prevProductos.map((p) =>
-         p.id === productoActualizado.id
-         ? { ...productoActualizado, dirty: true }
-         : p
-      )
-   );
-   };
+  const limpiar = () => {
+    setProductos([]);
+    setUltimoPayload(null);
+    setResultado(null);
+  };
 
   return {
     productos,
+    resultado,
     loading,
-    setProductos,
-    buscarProductos,
-    aplicarCambios,
-    guardarCambios,
-    actualizarProductoLocal
+    simular,
+    aplicar,
+    quitarProductoDeLaPrevisualizacion,
+    limpiar,
   };
 }

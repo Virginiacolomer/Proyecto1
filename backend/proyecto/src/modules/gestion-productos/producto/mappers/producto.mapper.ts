@@ -4,6 +4,8 @@ import { GetProductoDto } from '../dto/get-producto.dto';
 import { UpdatePrecioDto } from '../dto/update-precio.dto';
 import { Usuario } from 'src/modules/gestion-usuario/usuario/domain/entities/usuario.entity';
 import { ProductoDto } from '../dto/producto.dto';
+import { HistorialPrecio } from '../domain/entities/historial-precio.entity';
+import { HistorialPrecioDto } from '../dto/historial-precio.dto';
 
 import {
   toReferenciaDto,
@@ -20,11 +22,8 @@ export class ProductoMapper {
     return {
       id: entity.id,
       denominacion: entity.denominacion,
+      presentacion: entity.presentacion?.denominacion ?? '',
       observacion: entity.observacion ?? '',
-      codigoProveedorDenominacion:
-        entity.codigoProveedor + ' - ' + entity.denominacion,
-
-      codigoProveedor: entity.codigoProveedor ?? '',
 
       proveedor: '',
       stock: entity.stock,
@@ -39,8 +38,6 @@ export class ProductoMapper {
       utilizaStockMinimo: entity.utilizaStockMinimo,
 
       stockMinimo: entity.stockMinimo,
-      utilizaPack: entity.utilizaPack,
-      cantidadPorPack: entity.cantidadPorPack ?? 0,
       sistema: entity.sistema,
       codigoReferencia: entity.codigoReferencia ?? '',
 
@@ -72,9 +69,8 @@ export class ProductoMapper {
     return {
       id: entity.id,
       denominacion: entity.denominacion,
+      presentacion: entity.presentacion ? toReferenciaDto(entity.presentacion) : undefined,
       observacion: entity.observacion ?? '',
-      codigoProveedor: entity.codigoProveedor ?? '',
-      codigoBarra: entity.codigoBarra ?? '',
       stock: entity.stock ?? 0,
       costo: entity.costo ?? 0,
       precio: entity.precio ?? 0,
@@ -93,8 +89,6 @@ export class ProductoMapper {
       ubicacion: entity.ubicacion ?? '',
       utilizaStockMinimo: entity.utilizaStockMinimo ?? false,
       stockMinimo: entity.stockMinimo ?? 0,
-      utilizaPack: entity.utilizaPack ?? false,
-      cantidadPorPack: entity.cantidadPorPack ?? 0,
       sistema: entity.sistema,
       codigoReferencia: entity.codigoReferencia ?? '',
 
@@ -104,5 +98,14 @@ export class ProductoMapper {
   }
 
 
+  static toHistorialDto(entity: HistorialPrecio): HistorialPrecioDto {
+    return {
+      id: entity.id,
+      precioAnterior: Number(entity.precioAnterior),
+      precioNuevo: Number(entity.precioNuevo),
+      motivo: entity.motivo,
+      fecha: entity.fecha,
+    };
+  }
    
 }

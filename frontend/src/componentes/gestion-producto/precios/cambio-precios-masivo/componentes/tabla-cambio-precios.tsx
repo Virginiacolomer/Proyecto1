@@ -1,4 +1,4 @@
-import { Pencil, Trash } from "lucide-react";
+import { Trash } from "lucide-react";
 import { ConsultarProductosCambioPreciosMasivo } from "../../../../../interfaces/gestion-producto/producto/interfaces-producto";
 import { TablaAGGrid,Column } from "../../../../herramientas/tablas/tabla-flexible-ag-grid";
 import { Button } from "../../../../ui/Button";
@@ -7,14 +7,12 @@ import { Button } from "../../../../ui/Button";
 type Props = {
   productos: ConsultarProductosCambioPreciosMasivo[];
   columns: Column<ConsultarProductosCambioPreciosMasivo>[];
-  onEditar: (producto: ConsultarProductosCambioPreciosMasivo) => void;
-  onEliminar: (id: number) => void;
+  onEliminar: (productoId: number) => void;
 };
 
 export default function TablaCambioPrecios({
   productos,
   columns,
-  onEditar,
   onEliminar,
 }: Props) {
   return (
@@ -28,19 +26,9 @@ export default function TablaCambioPrecios({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onEditar(row)}
-              className="bg-blue-500 text-white hover:bg-blue-800 w-8 h-8 flex items-center justify-center"
-              title="Actualizar producto"
-            >
-              <Pencil size={18} />
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onEliminar(row.id)}
+              onClick={() => onEliminar(row.productoId)}
               className="w-8 h-8 flex items-center justify-center bg-blue-500 text-white hover:bg-blue-800"
-              title="Eliminar producto"
+              title="Quitar de la previsualización"
             >
               <Trash size={18} />
             </Button>

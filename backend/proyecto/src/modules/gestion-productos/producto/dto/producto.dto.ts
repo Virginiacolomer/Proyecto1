@@ -28,17 +28,17 @@ export class ProductoDto {
   @IsString()
   denominacion: string;
 
+  @ApiPropertyOptional({
+    type: () => ReferenciaDto,
+    description: 'Presentacion asociada al producto',
+  })
+  @ValidateNested()
+  @Type(() => ReferenciaDto)
+  presentacion?: ReferenciaDto;
+
   @ApiProperty()
   @IsString()
   observacion?: string;
-
-  @ApiProperty()
-  @IsString()
-  codigoProveedor: string;
-
-  @ApiProperty()
-  @IsString()
-  codigoBarra?: string;
 
   @ApiProperty()
   @IsInt()
@@ -132,15 +132,6 @@ export class ProductoDto {
   @ApiPropertyOptional()
   @IsInt()
   stockMinimo: number;
-
-  @ApiProperty()
-  @IsBoolean()
-  @IsNotEmpty()
-  utilizaPack: boolean;
-
-  @ApiPropertyOptional()
-  @IsInt()
-  cantidadPorPack: number;
 
   @ApiProperty({ example: 123 })
   @Type(() => Number)

@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Transactional } from 'src/modules/common/decorators/transactional.decoratos';
 import { DatabaseConnectionException } from 'src/modules/common/exceptions/database-connection.exception';
@@ -14,6 +14,7 @@ import { CreateProductoDto } from '../../dto/create-producto.dto';
 import { UpdatePrecioDto } from '../../dto/update-precio.dto';
 import { UpdateProductoDto } from '../../dto/update-producto.dto';
 import { ProductoMapper } from '../../mappers/producto.mapper';
+import { HistorialPrecio } from '../../domain/entities/historial-precio.entity';
 
 
 @Injectable()
@@ -30,56 +31,61 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
   ) { }
 
 
-  @Transactional()
-  async create(
-    data: CreateProductoDto,
-    linea: Linea,
-    marca: Marca,
-    usuario: Usuario,
-  ): Promise<Producto> {
-    const repo = this.uow.getRepository(Producto);
-    this.logger.log(`Creando un nuevo p ${this.ENTITY_NAME}`);
+    @Transactional()
+    async create(
+      data: CreateProductoDto,
+      linea: Linea,
+      marca: Marca,
+      usuario: Usuario,
+    ): Promise<Producto> {
+      const repo = this.uow.getRepository(Producto);
+      this.logger.log(`Creando un nuevo p ${this.ENTITY_NAME}`);
 
-    try {
-      // DEBUG: Loggear todos los datos que llegan
-      this.logger.debug('Data recibida:', JSON.stringify(data, null, 2));
-      // Verificar que todos los objetos relacionados existan
-      this.logger.debug('Linea:', linea);
-      this.logger.debug('Marca:', marca);
-      this.logger.debug('Usuario:', usuario);
+      const { costo, porcentaje, stock, stockMinimo, ...dataSinItems } =
+        data as CreateProductoDto & Record<string, any>;
 
       const nuevaEntity = repo.create({
-        ...data,
+        ...dataSinItems,
         linea,
         marca,
+        presentacion: dataSinItems.presentacionId ? ({ id: dataSinItems.presentacionId } as any) : null,
         usuarioCreated: usuario,
       });
 
-      this.logger.debug('Entity creada:', nuevaEntity);
+      // Reglas de negocio del dominio: se ejecuta ANTES de intentar persistir,
+      // así ante un dato inválido no se guarda nada (todo o nada).
+      nuevaEntity.establecerCostoMargenYStock({
+        costo,
+        margen: porcentaje,
+        stock,
+        stockMinimo,
+      });
 
-      const entityGuardada = await repo.save(nuevaEntity);
-      this.logger.log(`Entity guardada con ID: ${entityGuardada.id}`);
+      // Regla de dominio (CR-005): valida y/o autogenera la denominación
+      nuevaEntity.asignarDenominacion(data.denominacion);
 
-      this.logger.log(
-        `${this.ENTITY_NAME} creado exitosamente con ID: ${entityGuardada.id}`,
-      );
-
-
-      return entityGuardada;
-    } catch (error) {
-      this.logger.error(`Error al crear ${this.ENTITY_NAME}:`, error);
-      this.logger.error('Stack trace:', error);
-      throw new DatabaseConnectionException(
-        'Error al guardar en la base de datos.',
-      );
+      try {
+        const entityGuardada = await repo.save(nuevaEntity);
+        this.logger.log(
+          `${this.ENTITY_NAME} creado exitosamente con ID: ${entityGuardada.id}`,
+        );
+        return entityGuardada;
+      } catch (error) {
+        this.logger.error(`Error al crear ${this.ENTITY_NAME}:`, error);
+        throw new DatabaseConnectionException(
+          'Error al guardar en la base de datos.',
+        );
+      }
     }
-  }
+
   async findOne(id: number): Promise<Producto | null> {
     try {
       const entity = await this.repository
         .createQueryBuilder('producto')
         .leftJoinAndSelect('producto.linea', 'linea')
         .leftJoinAndSelect('producto.marca', 'marca')
+        .leftJoinAndSelect('producto.presentacion', 'presentacion')
+        .withDeleted()
         .where('producto.id = :id', { id })
         .andWhere('producto.deletedAt IS NULL')
         .getOne();
@@ -109,6 +115,8 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
         .leftJoinAndSelect('producto.usuarioCreated', 'usuarioCreated')
         .leftJoinAndSelect('producto.usuarioUpdated', 'usuarioUpdated')
         .leftJoinAndSelect('producto.usuarioDeleted', 'usuarioDeleted')
+        .leftJoinAndSelect('producto.presentacion', 'presentacion')
+        .withDeleted()
         .where('producto.id = :id', { id })
 
         .getOne();
@@ -154,43 +162,83 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
     }
   }
 
-  @Transactional()
-  async update(
-    id: number,
-    data: UpdateProductoDto,
-    linea: Linea,
-    marca: Marca,
+    @Transactional()
+    async update(
+      id: number,
+      data: UpdateProductoDto,
+      linea: Linea,
+      marca: Marca,
 
-    usuario: Usuario,
-  ): Promise<Producto> {
-    const repo = this.uow.getRepository(Producto);
-    try {
+      usuario: Usuario,
+    ): Promise<Producto> {
+      const repo = this.uow.getRepository(Producto);
+
       const entity = await this.findOne(id);
-
       if (!entity) {
         throw new NotFoundException(`EL prodcuto con ID ${id} no encontrada`);
       }
-      const {
 
-        ...dataSinItems
-      } = data;
+      const { costo, porcentaje, stock, stockMinimo, ...dataSinItems } = data;
+
+      const precioAnterior = entity.precio ?? 0;
+
+      // Reglas de negocio del dominio: valida y recalcula el precio ANTES de
+      // tocar el resto de la entidad. Si falla, el producto conserva sus
+      // valores anteriores y no se llega a guardar nada.
+      entity.establecerCostoMargenYStock({
+        costo,
+        margen: porcentaje,
+        stock,
+        stockMinimo,
+      });
+
+      const precioNuevo = entity.precio ?? 0;
 
       Object.assign(entity, dataSinItems, {
         linea,
         marca,
+        presentacion: dataSinItems.presentacionId ? ({ id: dataSinItems.presentacionId } as any) : null,
       });
 
-      entity.usuarioUpdated = usuario; 
-      const entityActualizada = await repo.save(entity);
+      if (data.denominacion !== undefined) {
+        entity.asignarDenominacion(data.denominacion);
+      }
 
+      entity.usuarioUpdated = usuario;
 
-      return entityActualizada;
-    } catch (error) {
-      this.logger.warn(`Items para eliminar: )}`);
+      if (Number(precioAnterior) !== Number(precioNuevo)) {
+        if (!data.motivo || data.motivo.trim() === '') {
+           throw new BadRequestException('El motivo es obligatorio al modificar costo o porcentaje y causar un cambio de precio.');
+        }
+        if (precioNuevo <= 0) {
+           throw new BadRequestException('El nuevo precio debe ser mayor a 0');
+        }
+      }
 
-      throw new DatabaseConnectionException(error);
+      try {
+        const entityActualizada = await repo.save(entity);
+
+        if (Number(precioAnterior) !== Number(precioNuevo)) {
+          const historialRepo = this.uow.getRepository(HistorialPrecio);
+          const historial = historialRepo.create({
+            producto: entityActualizada,
+            precioAnterior: precioAnterior,
+            precioNuevo: precioNuevo,
+            motivo: (data.motivo || '').trim(),
+            fecha: new Date(),
+          });
+          await historialRepo.save(historial);
+        }
+
+        return entityActualizada;
+      } catch (error) {
+        if (error instanceof BadRequestException) {
+           throw error;
+        }
+        throw new DatabaseConnectionException(error);
+      }
     }
-  }
+
 
 
   async updateEntity(uow: IUnitOfWork, producto: Producto): Promise<Producto> {
@@ -218,11 +266,10 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
 
   async findBy(
     denominacion: string,
-    codigoProveedor: string,
-    codProveedorExacto: boolean,
     codigoReferencia: string,
     marca_id: number,
     linea_id: number,
+    superLineaId: number,
     proveedor_id: number,
     conStock: boolean,
     skip: number,
@@ -233,31 +280,21 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
       .createQueryBuilder('producto')
       .leftJoinAndSelect('producto.marca', 'marca')
       .leftJoinAndSelect('producto.linea', 'linea')
+      .leftJoinAndSelect('linea.superlinea', 'superlinea')
+      .leftJoinAndSelect('producto.presentacion', 'presentacion')
+      .withDeleted()
 
-    if (denominacion || codigoProveedor || codigoReferencia) {
+    if (denominacion || codigoReferencia) {
       const condiciones: string[] = [];
       const parametros: any = {};
 
       if (denominacion) {
         condiciones.push(
-          `UPPER(producto.denominacion) LIKE UPPER(:denominacion)`,
+          `(UPPER(producto.denominacion) LIKE UPPER(:denominacion) OR UPPER(linea.denominacion) LIKE UPPER(:denominacion) OR UPPER(superlinea.denominacion) LIKE UPPER(:denominacion))`
         );
         parametros.denominacion = `%${denominacion}%`;
       }
 
-      if (codigoProveedor) {
-        if (codProveedorExacto) {
-          condiciones.push(
-            `UPPER(producto.codigoProveedor) = UPPER(:codigoProveedor)`,
-          );
-          parametros.codigoProveedor = codigoProveedor;
-        } else {
-          condiciones.push(
-            `UPPER(producto.codigoProveedor) LIKE UPPER(:codigoProveedor)`,
-          );
-          parametros.codigoProveedor = `%${codigoProveedor}%`;
-        }
-      }
 
       if (codigoReferencia) {
         condiciones.push(
@@ -274,6 +311,9 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
     }
     if (linea_id) {
       query.andWhere('linea.id = :linea_id', { linea_id });
+    }
+    if (superLineaId) {
+      query.andWhere('linea.super_linea_id = :superLineaId', { superLineaId });
     }
 
     this.logger.warn(`conStock llega como: ${conStock} (${typeof conStock})`);
@@ -314,14 +354,13 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
       if (exacto) {
         // Exacto solo en los códigos
         query.andWhere(
-          '(producto.codigoProveedor = :codigo OR producto.codigoReferencia = :codigo)',
+          '(producto.codigoReferencia = :codigo)',
           { codigo },
         );
       } else {
         // Parcial en códigos Y denominación
         query.andWhere(
           `(
-        producto.codigoProveedor LIKE :codigo OR 
         producto.codigoReferencia LIKE :codigo OR 
         producto.denominacion LIKE :codigo
       )`,
@@ -340,35 +379,6 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
     return { data, total };
   }
 
-  async isCodigoProveedorDuplicado(
-    codigoProveedor: string | null,
-    id?: number,
-  ): Promise<boolean> {
-    // Si el código es nulo, vacío o '0', no hace falta verificar duplicados
-    if (
-      !codigoProveedor ||
-      codigoProveedor.trim() === '' ||
-      codigoProveedor === '0'
-    ) {
-      return false;
-    }
-
-    const query = this.repository
-      .createQueryBuilder('producto')
-      .where('producto.codigoProveedor = :codigoProveedor', {
-        codigoProveedor,
-      });
-
-    // Si se está actualizando, excluimos el producto actual
-    if (id) {
-      query.andWhere('producto.id != :id', { id });
-    }
-
-    const existe = await query.getExists();
-
-    return existe; // true si existe otro con el mismo código
-  }
-
   @Transactional()
   async actualizarPrecio(id: number, dto: UpdatePrecioDto, usuario: Usuario) {
     const repo = this.uow.getRepository(Producto);
@@ -381,7 +391,17 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
     ProductoMapper.mapPrecios(entity, dto, usuario);
 
     await repo.save(entity);
+  }
 
+  async getHistorialPrecios(productoId: number): Promise<HistorialPrecio[]> {
+    // Verificar que el producto existe utilizando el mecanismo existente (lanza excepción si no existe)
+    await this.findOne(productoId);
+
+    const historialRepo = this.dataSource.getRepository(HistorialPrecio);
+    return await historialRepo.find({
+      where: { producto: { id: productoId } },
+      order: { fecha: 'DESC' },
+    });
   }
 
   async findByDenominacion(denominacion: string): Promise<Producto | null> {
@@ -471,6 +491,17 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
     return count > 0;
   }
 
+  async existsProductosActivosByPresentacion(presentacionId: number): Promise<boolean> {
+    const count = await this.repository
+      .createQueryBuilder('producto')
+      .where('producto.presentacion_id = :presentacionId', { presentacionId })
+      .andWhere('producto.deletedAt IS NULL')
+      .limit(1)
+      .getCount();
+
+    return count > 0;
+  }
+
   // En ProductoService
   async findByIds(ids: number[]): Promise<Producto[]> {
 
@@ -487,28 +518,25 @@ export class ProductoPersistenceAdapter implements IProductoRepository {
   }
 
 
-  async existsByCodigoProveedor(codigoProveedor: string, excludeId: number): Promise<boolean> {
-    try {
-      const queryBuilder = this.repository
-        .createQueryBuilder('producto')
-        .where('producto.codigoProveedor = :codigoProveedor', { codigoProveedor })
-        .andWhere('producto.deletedAt IS NULL');
+  async findActivosPorLineaOMarca(
+    lineaId?: number,
+    marcaId?: number,
+  ): Promise<Producto[]> {
+    const query = this.repository
+      .createQueryBuilder('producto')
+      .where('producto.deletedAt IS NULL');
 
-      if (excludeId) {
-        queryBuilder.andWhere('producto.id != :excludeId', { excludeId });
-      }
-
-      const count = await queryBuilder.getCount();
-      return count > 0;
-    } catch (error) {
-      this.logger.error(
-        `Error verificando existencia de denominación:}`,
-      );
-      throw new DatabaseConnectionException(
-        'Error al conectar con la base de datos.',
-      );
+    if (lineaId) {
+      query.andWhere('producto.linea_id = :lineaId', { lineaId });
     }
+    if (marcaId) {
+      query.andWhere('producto.marca_id = :marcaId', { marcaId });
+    }
+
+    return query.orderBy('producto.denominacion', 'ASC').getMany();
   }
+
+
 
 }
 
