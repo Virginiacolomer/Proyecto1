@@ -4,7 +4,6 @@ export class RemoveCamposProducto1790089632077 implements MigrationInterface {
     name = 'RemoveCamposProducto1790089632077'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`DROP INDEX \`IDX_3a128605de9529f2d6a916f8f3\` ON \`producto\``);
         await queryRunner.query(`ALTER TABLE \`producto\` DROP COLUMN \`codigoProveedor\``);
         await queryRunner.query(`ALTER TABLE \`producto\` DROP COLUMN \`codigoBarra\``);
         await queryRunner.query(`ALTER TABLE \`producto\` DROP COLUMN \`utilizaPack\``);
