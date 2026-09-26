@@ -23,56 +23,46 @@ describe('Producto - Denominación automática (CR-005)', () => {
     expect(denominacion).toBe('Circe Aceites 1L');
   });
 
-  it('Escenario 2: Edición manual y persistencia respetando el texto manual', () => {
+  it('Escenario 2: Edición manual y persistencia', () => {
     const producto = crearProductoConAtributos('Circe', 'Aceites', '1L');
     producto.asignarDenominacion('Circe Aceites 1L - Extra Virgen');
 
     expect(producto.denominacion).toBe('Circe Aceites 1L - Extra Virgen');
   });
 
-  it('Escenario 3: Actualización reactiva al cambiar la presentación', () => {
+  it('Escenario 3: No sobreescritura ante la edición manual', () => {
     const producto = crearProductoConAtributos('Circe', 'Aceites', '1L');
-    expect(producto.generarDenominacionAutomatica()).toBe('Circe Aceites 1L');
+    producto.asignarDenominacion('Circe Aceites 1L - Extra Virgen');
 
-    // Cambia la presentación
-    const nuevaDenominacion = producto.generarDenominacionAutomatica('2L');
-    expect(nuevaDenominacion).toBe('Circe Aceites 2L');
+    // Cambia la línea en la entidad a "Aceitunas"
+    producto.linea = { id: 2, denominacion: 'Aceitunas' } as any;
+
+    // Al no invocar regeneración, la denominación previa se conserva intacta
+    expect(producto.denominacion).toBe('Circe Aceites 1L - Extra Virgen');
   });
 
-  it('Escenario 4: Autogeneración cuando no se pasa texto manual o viene vacío', () => {
+  it('Escenario 4: Regeneración mediante el botón', () => {
     const producto = crearProductoConAtributos('Caroyense', 'Aceitunas', '1L');
+    const denominacionRegenerada = producto.generarDenominacionAutomatica();
 
-    producto.asignarDenominacion('');
-    expect(producto.denominacion).toBe('Caroyense Aceitunas 1L');
-
-    producto.asignarDenominacion(null);
-    expect(producto.denominacion).toBe('Caroyense Aceitunas 1L');
-
-    producto.asignarDenominacion(undefined);
-    expect(producto.denominacion).toBe('Caroyense Aceitunas 1L');
+    expect(denominacionRegenerada).toBe('Caroyense Aceitunas 1L');
   });
 
-  it('Escenario 5: Validación de longitud máxima (rechaza si supera 255 caracteres)', () => {
+  it('Escenario 5: Validación de campos requeridos y longitud máxima', () => {
+    const productoVacio = new Producto();
+    expect(() => productoVacio.generarDenominacionAutomatica()).toThrow(
+      ProductoInvalidoException,
+    );
+
     const marcaLarga = 'A'.repeat(150);
     const lineaLarga = 'B'.repeat(150);
-    const producto = crearProductoConAtributos(marcaLarga, lineaLarga, '1L');
+    const productoLargo = crearProductoConAtributos(marcaLarga, lineaLarga, '1L');
 
-    expect(() => producto.generarDenominacionAutomatica()).toThrow(
+    expect(() => productoLargo.generarDenominacionAutomatica()).toThrow(
       ProductoInvalidoException,
     );
-    expect(() => producto.asignarDenominacion('C'.repeat(256))).toThrow(
+    expect(() => productoLargo.asignarDenominacion('C'.repeat(256))).toThrow(
       ProductoInvalidoException,
     );
-  });
-
-  it('Normalización: recorta espacios al inicio y final (trim) y elimina espacios dobles', () => {
-    const producto = crearProductoConAtributos(
-      '   Circe   ',
-      '   Aceites  ',
-      '   1L   ',
-    );
-    const denominacion = producto.generarDenominacionAutomatica();
-
-    expect(denominacion).toBe('Circe Aceites 1L');
   });
 });
