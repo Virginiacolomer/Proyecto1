@@ -53,7 +53,7 @@ export default function ConsultarProductos() {
   const usuarioId = getUsuarioId();
   const { configuracion } = useConfiguracionSistema();
   const [codigo, setCodigo] = useState<string>("");
-  const [exacto, setExacto] = useState<boolean>(true);
+  const [exacto, setExacto] = useState<boolean>(false);
   const [auditoria, setAuditoria] = useState<Auditoria>({} as Auditoria);
   const isMounted = useRef(false);
   const inicializacionCompleta = useRef(false);
@@ -114,11 +114,12 @@ export default function ConsultarProductos() {
 
   useEffect(() => {
     if (!inicializacionCompleta.current) return;
-    const timer = setTimeout(() => {
-      handleBuscarProductosRapido();
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [codigo, exacto]);
+    // Comentado para evitar que busque letra por letra:
+    // const timer = setTimeout(() => {
+    //   handleBuscarProductosRapido();
+    // }, 400);
+    // return () => clearTimeout(timer);
+  }, [exacto]); // Solo lo dejamos para "exacto" si quisieran, o simplemente vacío, pero para exacto tiene sentido que re-busque. Wait, I will just comment out the body.
 
   useEffect(() => {
     if (buscar.cont > 0 && buscar.componente === "consultar-producto") {
@@ -509,11 +510,11 @@ export default function ConsultarProductos() {
               {/*  HEADER Desktop */}
               <ProductosHeader
                 roles={getRoles()}
-                codigo={codigo}
+                codigo={valoresFiltros.denominacion || ""}
                 exacto={exacto}
-                onChangeCodigo={setCodigo}
+                onChangeCodigo={(val) => setValoresFiltros({ ...valoresFiltros, denominacion: val })}
                 onChangeExacto={setExacto}
-                onBuscarRapido={() => handleBuscarProductosRapido(true)}
+                onBuscarRapido={() => handleBuscarProductos(true)}
                 onNuevo={openModal}
                 total={entidadesTotales}
                 mostrados={productos.length}
@@ -525,12 +526,12 @@ export default function ConsultarProductos() {
 
               <div className="lg:hidden">
                 <ProductosHeaderLg
-                codigo={codigo}
+                codigo={valoresFiltros.denominacion || ""}
                 exacto={exacto}
                 roles={getRoles()}
-                onChangeCodigo={setCodigo}
+                onChangeCodigo={(val) => setValoresFiltros({ ...valoresFiltros, denominacion: val })}
                 onChangeExacto={setExacto}
-                onBuscarRapido={() => handleBuscarProductosRapido(true)}
+                onBuscarRapido={() => handleBuscarProductos(true)}
                 onNuevo={openModal}
                 total={entidadesTotales}
                 mostrados={productos.length}
