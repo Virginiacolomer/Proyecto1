@@ -136,8 +136,6 @@ export class ProductoService {
 
   async findBy(
     denominacion: string,
-    codigoProveedor: string,
-    codProveedorExacto: boolean,
     codigoReferencia: string,
     marca_id: number,
     linea_id: number,
@@ -150,8 +148,6 @@ export class ProductoService {
     this.logger.warn(`service`);
     const result = await this.repository.findBy(
       denominacion,
-      codigoProveedor,
-      codProveedorExacto,
       codigoReferencia,
       marca_id,
       linea_id,
@@ -338,12 +334,7 @@ export class ProductoService {
       await this.uniquenessValidator.validarDenominacionUnica(dto.denominacion);
     }
 
-    if (dto.codigoProveedor) {
-      await this.uniquenessValidator.validarCodigoProveedorUnico(
-        dto.codigoProveedor,
-        0,
-      );
-    }
+
     // 3 Validar entidades relacionadas existen (Infrastructure - DB)
     const { marca, linea, } =
       await this.relatedEntitiesValidator.validarYObtenerEntidadesRelacionadas(

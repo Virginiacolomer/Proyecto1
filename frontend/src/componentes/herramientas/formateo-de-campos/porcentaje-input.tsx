@@ -72,7 +72,7 @@ const PorcentajeInput: React.FC<PorcentajeInputProps> = ({
           disabled={disabled}
           isAllowed={(values) => {
             const current = values.floatValue ?? 0;
-            return current <= 999;
+            return current <= 99999;
           }}
           onValueChange={(values) => {
             onChange(values.floatValue ?? 0);
