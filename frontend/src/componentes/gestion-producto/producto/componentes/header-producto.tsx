@@ -80,7 +80,7 @@ export function ProductosHeader({
             title="Aumentar precios por porcentaje o monto fijo"
           >
             <DollarSign className="mr-2 h-4 w-4" />
-            Actualización masiva de precios
+            Aumento masivo de precio
           </Button>
         )}
         <ImpresionForm

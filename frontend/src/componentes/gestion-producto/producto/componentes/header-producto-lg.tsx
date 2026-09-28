@@ -81,7 +81,7 @@ export function ProductosHeaderLg({
             title="Aumentar precios por porcentaje o monto fijo"
           >
             <DollarSign className="mr-2 h-4 w-4" />
-            Actualización masiva de precios
+            Aumento masivo de precio
           </Button>
         )}
         {puedeAgregarProducto(roles) && (<Button className="bg-blue-500 hover:bg-blue-600 text-white flex items-center gap-1.5 px-3 py-2 rounded-lg shadow-sm"
