@@ -4,6 +4,10 @@ export const puedeAgregarProducto = (roles: number[]) =>
   roles.includes(Rol.ADMINISTRADOR);
 
 
+// CR-006: mismo criterio que la ruta /admin/cambio-precios-masivo y el backend.
+export const puedeActualizarPreciosMasivo = (roles: number[]) =>
+  roles.includes(Rol.ADMINISTRADOR);
+
 export const puedeVerProductos = (roles: number[]) =>
   roles.includes(Rol.ADMINISTRADOR) ||
   roles.includes(Rol.VENDEDOR) ||
