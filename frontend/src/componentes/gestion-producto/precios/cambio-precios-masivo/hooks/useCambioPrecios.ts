@@ -57,12 +57,6 @@ export function useCambioPrecios(usuarioId: number | null) {
     }
   };
 
-  // Sacar un producto puntual de la previsualización antes de confirmar
-  // (no pega al backend, solo ajusta la vista previa local).
-  const quitarProductoDeLaPrevisualizacion = (productoId: number) => {
-    setProductos((prev) => prev.filter((p) => p.productoId !== productoId));
-  };
-
   const limpiar = () => {
     setProductos([]);
     setUltimoPayload(null);
@@ -75,7 +69,6 @@ export function useCambioPrecios(usuarioId: number | null) {
     loading,
     simular,
     aplicar,
-    quitarProductoDeLaPrevisualizacion,
     limpiar,
   };
 }
